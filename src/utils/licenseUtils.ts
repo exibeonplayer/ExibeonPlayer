@@ -43,17 +43,25 @@ export const checkExpiredLicenses = async () => {
         .from('license_actions')
         .insert(auditActions);
 
-      // Enviar comandos para os players
-      const playerCommands = expiredLicenses.map(license => ({
-        player_id: 'ALL',
-        command_type: 'block_license',
-        payload: { user_id: license.user_id, reason: 'license_expired' },
-        status: 'pending'
-      }));
+      // Buscar players dos usuários com licenças expiradas
+      const userIds = expiredLicenses.map(l => l.user_id);
+      const { data: players } = await supabase
+        .from('players')
+        .select('id, user_id')
+        .in('user_id', userIds);
 
-      await supabase
-        .from('player_commands')
-        .insert(playerCommands);
+      if (players && players.length > 0) {
+        const playerCommands = players.map(player => ({
+          player_id: player.id,
+          command: 'block',
+          payload: { reason: 'license_expired' },
+          status: 'pending'
+        }));
+
+        await supabase
+          .from('player_commands')
+          .insert(playerCommands);
+      }
 
       console.log(`${expiredLicenses.length} licenças expiradas automaticamente`);
     }
@@ -82,7 +90,7 @@ export const formatLicenseEndDate = (endDate: string | null): string => {
 };
 
 export const getLicenseStatusColor = (status: string, endDate: string | null): string => {
-  if (status === 'blocked') return 'text-destructive';
+  if (status === 'suspended') return 'text-destructive';
   if (status === 'expired') return 'text-warning';
   
   if (endDate) {

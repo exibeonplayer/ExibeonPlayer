@@ -14,7 +14,487 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analytics_daily: {
+        Row: {
+          connection_losses: number | null
+          content_played_count: number | null
+          created_at: string | null
+          date: string
+          id: string
+          player_id: string
+          uptime_seconds: number | null
+        }
+        Insert: {
+          connection_losses?: number | null
+          content_played_count?: number | null
+          created_at?: string | null
+          date: string
+          id?: string
+          player_id: string
+          uptime_seconds?: number | null
+        }
+        Update: {
+          connection_losses?: number | null
+          content_played_count?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          player_id?: string
+          uptime_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_daily_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_actions: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          license_id: string
+          performed_by: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          license_id: string
+          performed_by?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          license_id?: string
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_actions_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      licenses: {
+        Row: {
+          created_at: string | null
+          end_date: string | null
+          id: string
+          max_players: number
+          start_date: string | null
+          status: Database["public"]["Enums"]["license_status"] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          max_players?: number
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["license_status"] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          max_players?: number
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["license_status"] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      media_files: {
+        Row: {
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string | null
+          description: string | null
+          duration_seconds: number | null
+          file_size_bytes: number | null
+          file_url: string
+          id: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          file_url: string
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          file_url?: string
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      player_commands: {
+        Row: {
+          command: string
+          created_at: string | null
+          executed_at: string | null
+          id: string
+          payload: Json | null
+          player_id: string
+          status: string | null
+        }
+        Insert: {
+          command: string
+          created_at?: string | null
+          executed_at?: string | null
+          id?: string
+          payload?: Json | null
+          player_id: string
+          status?: string | null
+        }
+        Update: {
+          command?: string
+          created_at?: string | null
+          executed_at?: string | null
+          id?: string
+          payload?: Json | null
+          player_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_commands_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          log_type: string
+          message: string | null
+          metadata: Json | null
+          player_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          log_type: string
+          message?: string | null
+          metadata?: Json | null
+          player_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          log_type?: string
+          message?: string | null
+          metadata?: Json | null
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_logs_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_schedules: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          player_id: string
+          playlist_id: string
+          start_time: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          player_id: string
+          playlist_id: string
+          start_time: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          player_id?: string
+          playlist_id?: string
+          start_time?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_schedules_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_schedules_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_tokens: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          player_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          player_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          player_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_tokens_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          code: string
+          connection_losses: number | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          last_heartbeat: string | null
+          location: string | null
+          name: string
+          status: Database["public"]["Enums"]["player_status"] | null
+          updated_at: string | null
+          uptime_seconds: number | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          connection_losses?: number | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          last_heartbeat?: string | null
+          location?: string | null
+          name: string
+          status?: Database["public"]["Enums"]["player_status"] | null
+          updated_at?: string | null
+          uptime_seconds?: number | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          connection_losses?: number | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          last_heartbeat?: string | null
+          location?: string | null
+          name?: string
+          status?: Database["public"]["Enums"]["player_status"] | null
+          updated_at?: string | null
+          uptime_seconds?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      playlist_items: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          duration_override_seconds: number | null
+          id: string
+          media_file_id: string
+          playlist_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order: number
+          duration_override_seconds?: number | null
+          id?: string
+          media_file_id: string
+          playlist_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          duration_override_seconds?: number | null
+          id?: string
+          media_file_id?: string
+          playlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_items_media_file_id_fkey"
+            columns: ["media_file_id"]
+            isOneToOne: false
+            referencedRelation: "media_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_items_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlists: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          public_url: string | null
+          slug: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          public_url?: string | null
+          slug?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          public_url?: string | null
+          slug?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          email: string
+          id: string
+          is_master: boolean | null
+          name: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          email: string
+          id: string
+          is_master?: boolean | null
+          name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_master?: boolean | null
+          name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -29,7 +509,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user" | "moderator"
+      app_role: "admin" | "user" | "moderator" | "master"
       content_type: "video" | "image"
       license_status: "active" | "expired" | "suspended"
       player_status:
@@ -165,7 +645,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "moderator"],
+      app_role: ["admin", "user", "moderator", "master"],
       content_type: ["video", "image"],
       license_status: ["active", "expired", "suspended"],
       player_status: [

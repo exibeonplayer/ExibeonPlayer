@@ -16,15 +16,13 @@ export interface UserProfile {
 
 export interface UserLicense {
   id: string;
-  user_id: string | null;
+  user_id: string;
   start_date: string;
   end_date: string | null;
-  status: string;
-  license_type: string;
-  max_players?: number | null;
-  notes?: string | null;
-  created_at: string | null;
-  updated_at?: string | null;
+  status: 'active' | 'expired' | 'blocked' | 'suspended';
+  max_players: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface UserWithLicense extends UserProfile {

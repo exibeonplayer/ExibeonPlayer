@@ -96,13 +96,13 @@ export const useLicenseManagement = () => {
         // Criar nova licença
         const { data, error } = await supabase
           .from('licenses')
-          .insert({
+          .insert([{
             user_id: userId,
             start_date: new Date().toISOString(),
             end_date: newEndDate.toISOString(),
             status: 'active',
-            license_type: 'standard'
-          })
+            max_players: 1
+          }])
           .select()
           .single();
         
@@ -113,13 +113,14 @@ export const useLicenseManagement = () => {
       // Registrar ação de auditoria
       await supabase
         .from('license_actions')
-        .insert({
+        .insert([{
           license_id: result.id,
           action_type: 'date_update',
           performed_by: user?.id,
-          new_status: result.status,
-          reason: `Data de término alterada para ${newEndDate.toLocaleDateString('pt-BR')}`
-        });
+          details: { 
+            reason: `Data de término alterada para ${newEndDate.toLocaleDateString('pt-BR')}` 
+          }
+        }]);
 
       await fetchAllUsers(); // Recarregar dados
 
@@ -141,7 +142,7 @@ export const useLicenseManagement = () => {
 
   const blockUnblockLicense = async (userId: string, block: boolean) => {
     try {
-      const newStatus = block ? 'blocked' : 'active';
+      const newStatus = block ? 'suspended' : 'active';
       
       // Verificar se existe licença
       const { data: existingLicense, error: fetchError } = await supabase
@@ -173,13 +174,13 @@ export const useLicenseManagement = () => {
         // Criar nova licença com status bloqueado
         const { data, error } = await supabase
           .from('licenses')
-          .insert({
+          .insert([{
             user_id: userId,
             start_date: new Date().toISOString(),
             end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias padrão
             status: newStatus,
-            license_type: 'standard'
-          })
+            max_players: 1
+          }])
           .select()
           .single();
         
@@ -190,24 +191,33 @@ export const useLicenseManagement = () => {
       // Registrar ação de auditoria
       await supabase
         .from('license_actions')
-        .insert({
+        .insert([{
           license_id: licenseId,
           action_type: block ? 'block' : 'unblock',
           performed_by: user?.id,
-          new_status: newStatus,
-          reason: `Licença ${block ? 'bloqueada' : 'desbloqueada'} pelo administrador`
-        });
+          details: { 
+            reason: `Licença ${block ? 'bloqueada' : 'desbloqueada'} pelo administrador` 
+          }
+        }]);
 
-      // Enviar comando para os players
-      await supabase
-        .from('player_commands')
-        .insert({
-          player_id: 'ALL', // Comando para todos os players
-          command_type: block ? 'block_license' : 'unblock_license',
-          payload: { user_id: userId },
-          created_by: user?.id,
+      // Buscar todos os players do usuário para enviar comandos
+      const { data: playerData } = await supabase
+        .from('players')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (playerData && playerData.length > 0) {
+        const commands = playerData.map(player => ({
+          player_id: player.id,
+          command: block ? 'block' : 'unblock',
+          payload: { reason: block ? 'license_blocked' : 'license_unblocked' },
           status: 'pending'
-        });
+        }));
+
+        await supabase
+          .from('player_commands')
+          .insert(commands);
+      }
 
       await fetchAllUsers(); // Recarregar dados
 

@@ -25,11 +25,12 @@ const PlayerDetailModal = ({ player, open, onOpenChange }: PlayerDetailModalProp
     try {
       const { error } = await supabase
         .from('player_commands')
-        .insert({
+        .insert([{
           player_id: player.player_id,
-          command_type: command,
-          payload: payload || {}
-        });
+          command: command,
+          payload: payload || {},
+          status: 'pending'
+        }]);
 
       if (error) throw error;
 
