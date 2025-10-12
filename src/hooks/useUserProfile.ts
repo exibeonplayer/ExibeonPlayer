@@ -47,24 +47,47 @@ export const useUserProfile = () => {
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', user.id)
-        .single();
+        .eq('id', user.id);
 
       if (profileError) throw profileError;
 
-      setProfile(profileData);
+      // Se não encontrou perfil, criar um básico
+      if (!profileData || profileData.length === 0) {
+        console.log('No profile found, creating basic profile for user:', user.id);
+        
+        // Criar perfil básico
+        const { data: newProfile, error: createError } = await supabase
+          .from('user_profiles')
+          .insert([{
+            id: user.id,
+            email: user.email || '',
+            name: user.user_metadata?.name || user.email?.split('@')[0] || 'Usuário',
+            is_master: false
+          }])
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          throw createError;
+        }
+
+        setProfile(newProfile);
+      } else {
+        setProfile(profileData[0]);
+      }
 
       // Buscar licença do usuário
       const { data: licenseData, error: licenseError } = await supabase
         .from('licenses')
         .select('*')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user.id);
 
-      if (licenseError && licenseError.code !== 'PGRST116') {
-        console.error('Error fetching license:', licenseError);
-      } else if (licenseData) {
-        setUserLicense(licenseData);
+      if (licenseError) {
+        console.warn('Error fetching license:', licenseError);
+        // Não definir userLicense se houver erro
+      } else if (licenseData && licenseData.length > 0) {
+        setUserLicense(licenseData[0]);
       }
 
     } catch (error) {
@@ -80,8 +103,10 @@ export const useUserProfile = () => {
   };
 
   useEffect(() => {
-    fetchProfile();
-  }, [user]);
+    if (user) {
+      fetchProfile();
+    }
+  }, [user?.id]); // Só re-executa quando o ID do usuário muda
 
   return {
     profile,

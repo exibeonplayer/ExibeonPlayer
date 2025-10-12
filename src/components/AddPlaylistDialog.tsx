@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
 import { usePlaylists } from '@/hooks/usePlaylists';
+import { useNotificationContext } from '@/contexts/NotificationContext';
 
 interface AddPlaylistDialogProps {
   trigger?: React.ReactNode;
@@ -29,7 +30,8 @@ const AddPlaylistDialog = ({ trigger }: AddPlaylistDialogProps) => {
     status: 'draft',
   });
 
-  const { addPlaylist } = usePlaylists();
+  const { addPlaylist, refreshPlaylists } = usePlaylists();
+  const { addNotification } = useNotificationContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +40,18 @@ const AddPlaylistDialog = ({ trigger }: AddPlaylistDialogProps) => {
     setLoading(true);
     try {
       await addPlaylist({
-        ...formData,
-        total_videos: 0,
-        total_duration: '00:00:00',
-        assigned_players: [],
+        name: formData.name,
+        is_active: formData.status === 'active',
+      });
+      
+      // Recarregar lista de playlists
+      await refreshPlaylists();
+      
+      // Adicionar notificação
+      addNotification({
+        type: 'playlist_created',
+        title: 'Playlist Criada',
+        message: `A playlist "${formData.name}" foi criada com sucesso.`
       });
       
       setFormData({

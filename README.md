@@ -1,73 +1,111 @@
-# Welcome to your Lovable project
+# 🎬 Exibeon Player Site
 
-## Project info
+Sistema de gerenciamento de conteúdo para o Exibeon Player - Plataforma completa para upload, organização e distribuição de conteúdo multimídia para players digitais.
 
-**URL**: https://lovable.dev/projects/3fa99805-1973-44b2-abdf-976b86e4c782
+## 🚀 Funcionalidades
 
-## How can I edit this code?
+- 📊 **Dashboard** - Painel de controle com métricas e estatísticas
+- 📹 **Gestão de Conteúdo** - Upload e gerenciamento de vídeos
+- 🎵 **Playlists** - Criação e organização de playlists
+- 🖥️ **Players** - Gerenciamento de dispositivos players
+- 📈 **Relatórios** - Análise de dados e atividades
+- 🔐 **Licenças** - Controle de licenças e usuários
 
-There are several ways of editing your application.
+## 🛠️ Tecnologias
 
-**Use Lovable**
+- **React** + **TypeScript**
+- **Vite** - Build tool
+- **Tailwind CSS** - Estilização
+- **Supabase** - Backend e banco de dados
+- **Shadcn/ui** - Componentes UI
+- **Lucide React** - Ícones
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3fa99805-1973-44b2-abdf-976b86e4c782) and start prompting.
+## 📦 Instalação
 
-Changes made via Lovable will be committed automatically to this repo.
+1. Clone o repositório:
+```bash
+git clone https://github.com/seu-usuario/exibeon-player-site.git
+cd exibeon-player-site
+```
 
-**Use your preferred IDE**
+2. Instale as dependências:
+```bash
+npm install
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+3. Configure as variáveis de ambiente:
+```bash
+# As credenciais do Supabase estão em: src/integrations/supabase/client.ts
+# Para produção, considere usar variáveis de ambiente
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. Inicie o servidor de desenvolvimento:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 🌐 Deploy na Vercel
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Deploy Automático (Recomendado)
 
-**Use GitHub Codespaces**
+1. Acesse [vercel.com](https://vercel.com)
+2. Faça login com sua conta GitHub
+3. Clique em **"Add New Project"**
+4. Selecione o repositório `exibeon-player-site`
+5. Configure as variáveis de ambiente (se necessário)
+6. Clique em **"Deploy"**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Deploy via CLI
 
-## What technologies are used for this project?
+```bash
+# Instale a CLI da Vercel
+npm i -g vercel
 
-This project is built with:
+# Faça login
+vercel login
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Deploy
+vercel --prod
+```
 
-## How can I deploy this project?
+## 🔧 Configurações Importantes
 
-Simply open [Lovable](https://lovable.dev/projects/3fa99805-1973-44b2-abdf-976b86e4c782) and click on Share -> Publish.
+### Footer Links
 
-## Can I connect a custom domain to my Lovable project?
+Edite `src/components/Footer.tsx` para configurar:
+- **Link de Download do Player**: `PLAYER_DOWNLOAD_LINK`
+- **Número do WhatsApp**: `WHATSAPP_LINK` (formato: `https://wa.me/55DDDNÚMERO`)
 
-Yes, you can!
+### Supabase
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+As credenciais estão em `src/integrations/supabase/client.ts`
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 📝 Scripts Disponíveis
+
+```bash
+npm run dev          # Inicia servidor de desenvolvimento
+npm run build        # Build para produção
+npm run preview      # Preview do build
+npm run lint         # Executa linter
+```
+
+## 🔒 Segurança
+
+- ✅ Row Level Security (RLS) habilitado em todas as tabelas
+- ✅ Autenticação via Supabase Auth
+- ✅ Isolamento de dados por usuário
+- ✅ Políticas de acesso granulares
+
+## 📄 Licença
+
+© 2025 Exibeon Player | Todos os direitos reservados.
+
+## 📞 Suporte
+
+Entre em contato através do WhatsApp disponível no rodapé do site.
+
+## 🔗 Links Úteis
+
+- [Documentação do Supabase](https://supabase.com/docs)
+- [Documentação do Vite](https://vitejs.dev/)
+- [Documentação do Tailwind CSS](https://tailwindcss.com/docs)

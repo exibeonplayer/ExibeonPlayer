@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Calendar, Video, MoreHorizontal } from 'lucide-react';
+import { Plus, Search, Calendar, Video, MoreHorizontal, Copy, ExternalLink } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,11 +19,23 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import AddPlaylistDialog from '@/components/AddPlaylistDialog';
-import { usePlaylists } from '@/hooks/usePlaylists';
+import EditPlaylistDialog from '@/components/EditPlaylistDialog';
+import ManagePlaylistItemsDialog from '@/components/ManagePlaylistItemsDialog';
+import PlaylistStats from '@/components/PlaylistStats';
+import LicenseRestricted from '@/components/LicenseRestricted';
+import { usePlaylists, Playlist } from '@/hooks/usePlaylists';
+import { useLicenseStatus } from '@/hooks/useLicenseStatus';
+import { useToast } from '@/hooks/use-toast';
 
 const Playlists = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { playlists, loading, deletePlaylist } = usePlaylists();
+  const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [managingPlaylist, setManagingPlaylist] = useState<Playlist | null>(null);
+  const [manageDialogOpen, setManageDialogOpen] = useState(false);
+  const { playlists, loading, deletePlaylist, refreshPlaylists } = usePlaylists();
+  const licenseStatus = useLicenseStatus();
+  const { toast } = useToast();
 
   const filteredPlaylists = playlists.filter(playlist =>
     playlist.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -34,6 +46,89 @@ const Playlists = () => {
       await deletePlaylist(id);
     }
   };
+
+  const handleView = (playlist: any) => {
+    console.log('Visualizar playlist:', playlist);
+    // TODO: Implementar visualização
+  };
+
+  const handleEdit = (playlist: Playlist) => {
+    setEditingPlaylist(playlist);
+    setEditDialogOpen(true);
+  };
+
+  const handleDuplicate = async (playlist: any) => {
+    console.log('Duplicar playlist:', playlist);
+    // TODO: Implementar duplicação
+  };
+
+  const handleSchedule = (playlist: any) => {
+    console.log('Agendar playlist:', playlist);
+    // TODO: Implementar agendamento
+  };
+
+  const handleManageItems = (playlist: Playlist) => {
+    setManagingPlaylist(playlist);
+    setManageDialogOpen(true);
+  };
+
+  const handleManageDialogClose = async (open: boolean) => {
+    setManageDialogOpen(open);
+    if (!open) {
+      // Recarregar playlists quando fechar o modal
+      await refreshPlaylists();
+    }
+  };
+
+  const handleCopyPlaylistUrl = async (playlist: Playlist) => {
+    try {
+      // Usar a URL pública se disponível, senão criar uma URL baseada no slug ou ID
+      let playlistUrl = playlist.public_url;
+      
+      if (!playlistUrl) {
+        // Criar URL baseada no slug se disponível, senão usar ID
+        const identifier = playlist.slug || playlist.id;
+        playlistUrl = `${window.location.origin}/playlist/${identifier}`;
+      }
+      
+      // Tentar usar a API moderna do clipboard
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(playlistUrl);
+      } else {
+        // Fallback para navegadores mais antigos
+        const textArea = document.createElement('textarea');
+        textArea.value = playlistUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback copy failed:', err);
+          throw new Error('Copy not supported');
+        }
+        
+        document.body.removeChild(textArea);
+      }
+      
+      toast({
+        title: "URL Copiada",
+        description: `URL da playlist "${playlist.name}" copiada para a área de transferência`,
+      });
+    } catch (error) {
+      console.error('Error copying URL:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao copiar URL da playlist. Tente selecionar e copiar manualmente.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -57,7 +152,11 @@ const Playlists = () => {
               Organize e gerencie suas listas de reprodução
             </p>
           </div>
+          <LicenseRestricted 
+            licenseStatus={licenseStatus}
+          >
             <AddPlaylistDialog />
+          </LicenseRestricted>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
@@ -78,10 +177,9 @@ const Playlists = () => {
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>Nome da Playlist</TableHead>
-                <TableHead>Total de Vídeos</TableHead>
-                <TableHead>Duração</TableHead>
-                <TableHead>Players Associados</TableHead>
+                <TableHead>Estatísticas</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>URL</TableHead>
                 <TableHead>Última Atualização</TableHead>
                 <TableHead className="w-[100px]">Ações</TableHead>
               </TableRow>
@@ -89,21 +187,28 @@ const Playlists = () => {
             <TableBody>
               {filteredPlaylists.map((playlist) => (
                 <TableRow key={playlist.id}>
-                  <TableCell className="font-medium">{playlist.id}</TableCell>
+                  <TableCell className="font-medium">{playlist.sequential_id || playlist.id}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Video className="w-4 h-4 text-muted-foreground" />
                       <span>{playlist.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{playlist.total_videos || 0}</TableCell>
-                  <TableCell>{playlist.total_duration || '00:00:00'}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {playlist.assigned_players?.length || 0} players
-                    </Badge>
+                    <PlaylistStats playlist={playlist} />
                   </TableCell>
-                  <TableCell>{getStatusBadge(playlist.status)}</TableCell>
+                  <TableCell>{getStatusBadge(playlist.is_active ? 'active' : 'draft')}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyPlaylistUrl(playlist)}
+                      className="flex items-center gap-1"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copiar URL
+                    </Button>
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                       <Calendar className="w-3 h-3" />
@@ -113,25 +218,44 @@ const Playlists = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Visualizar</DropdownMenuItem>
-                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                        <DropdownMenuItem>Duplicar</DropdownMenuItem>
-                        <DropdownMenuItem>Agendar</DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-destructive"
-                          onClick={() => handleDelete(playlist.id)}
-                        >
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <LicenseRestricted 
+                      licenseStatus={licenseStatus}
+                    >
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleView(playlist)}>
+                            Visualizar
+                          </DropdownMenuItem>
+                          <LicenseRestricted 
+                            licenseStatus={licenseStatus}
+                          >
+                            <DropdownMenuItem onClick={() => handleEdit(playlist)}>
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleManageItems(playlist)}>
+                              Gerenciar Vídeos
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicate(playlist)}>
+                              Duplicar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSchedule(playlist)}>
+                              Agendar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleDelete(playlist.id)}
+                            >
+                              Excluir
+                            </DropdownMenuItem>
+                          </LicenseRestricted>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </LicenseRestricted>
                   </TableCell>
                 </TableRow>
               ))}
@@ -155,6 +279,20 @@ const Playlists = () => {
             </Button>
           </div>
         </div>
+
+        {/* Modal de Edição */}
+        <EditPlaylistDialog
+          playlist={editingPlaylist}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+        />
+
+        {/* Modal de Gerenciar Itens */}
+        <ManagePlaylistItemsDialog
+          playlist={managingPlaylist}
+          open={manageDialogOpen}
+          onOpenChange={handleManageDialogClose}
+        />
       </div>
     </Layout>
   );

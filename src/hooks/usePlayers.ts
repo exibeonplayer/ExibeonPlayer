@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Player {
   id: string;
@@ -19,19 +20,27 @@ export interface Player {
   user_id?: string;
   created_at: string;
   updated_at: string;
+  is_online?: boolean;
 }
 
 export const usePlayers = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchPlayers = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('players' as any)
+        .from('players')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -49,15 +58,26 @@ export const usePlayers = () => {
   };
 
   const addPlayer = async (playerData: Omit<Player, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
     try {
+      // ✅ Garantir que o user_id seja sempre do usuário atual
+      const playerDataWithUser = {
+        ...playerData,
+        user_id: user.id
+      };
+
       const { data, error } = await supabase
         .from('players' as any)
-        .insert([playerData])
+        .insert([playerDataWithUser])
         .select()
         .single();
 
       if (error) throw error;
       
+      console.log(`🎮 Player adicionado para usuário ${user.email}:`, data?.name);
       setPlayers(prev => [data as any, ...prev]);
       toast({
         title: "Sucesso",
@@ -76,16 +96,22 @@ export const usePlayers = () => {
   };
 
   const updatePlayer = async (id: string, updates: Partial<Player>) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
     try {
       const { data, error } = await supabase
         .from('players' as any)
         .update(updates)
         .eq('id', id)
+        .eq('user_id', user.id) // ✅ Garantir que só atualize players do usuário atual
         .select()
         .single();
 
       if (error) throw error;
       
+      console.log(`🎮 Player atualizado para usuário ${user.email}:`, data?.name);
       setPlayers(prev => prev.map(player => 
         player.id === id ? { ...player, ...(data as any) } : player
       ));
@@ -107,14 +133,20 @@ export const usePlayers = () => {
   };
 
   const deletePlayer = async (id: string) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
     try {
       const { error } = await supabase
         .from('players' as any)
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id); // ✅ Garantir que só delete players do usuário atual
 
       if (error) throw error;
       
+      console.log(`🎮 Player removido para usuário ${user.email}:`, id);
       setPlayers(prev => prev.filter(player => player.id !== id));
       toast({
         title: "Sucesso",
@@ -132,8 +164,10 @@ export const usePlayers = () => {
   };
 
   useEffect(() => {
-    fetchPlayers();
-  }, []);
+    if (user) {
+      fetchPlayers();
+    }
+  }, [user?.id]);
 
   return {
     players,

@@ -49,6 +49,17 @@ const MasterRoute = ({ children }: MasterRouteProps) => {
     }
   }, [user]);
 
+  // Toast separado para evitar loop infinito
+  useEffect(() => {
+    if (isMaster === false && !checkingMaster && user) {
+      toast({
+        title: "Acesso negado",
+        description: "Apenas usuários Master podem acessar esta funcionalidade.",
+        variant: "destructive",
+      });
+    }
+  }, [isMaster, checkingMaster, user, toast]);
+
   if (loading || checkingMaster) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -62,11 +73,6 @@ const MasterRoute = ({ children }: MasterRouteProps) => {
   }
 
   if (isMaster === false) {
-    toast({
-      title: "Acesso negado",
-      description: "Apenas usuários Master podem acessar esta funcionalidade.",
-      variant: "destructive",
-    });
     return <Navigate to="/" replace />;
   }
 

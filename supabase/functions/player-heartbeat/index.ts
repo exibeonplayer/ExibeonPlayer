@@ -26,8 +26,8 @@ serve(async (req) => {
     const { data: player, error: playerError } = await supabaseClient
       .from('players')
       .select('*')
-      .eq('player_id', player_id)
-      .eq('api_key', api_key)
+      .eq('id', player_id) // Corrigido: usar id em vez de player_id
+      .eq('code', api_key) // Corrigido: usar code em vez de api_key
       .single();
 
     if (playerError || !player) {
@@ -45,10 +45,11 @@ serve(async (req) => {
       .from('players')
       .update({
         status: status || 'online',
-        last_activity: new Date().toISOString(),
-        ip: req.headers.get('x-forwarded-for') || 'unknown'
+        last_heartbeat: new Date().toISOString(), // Corrigido: usar last_heartbeat
+        updated_at: new Date().toISOString(),
+        ip_address: req.headers.get('x-forwarded-for') || 'unknown' // Corrigido: usar ip_address
       })
-      .eq('player_id', player_id);
+      .eq('id', player_id); // Corrigido: usar id em vez de player_id
 
     if (updateError) {
       throw updateError;

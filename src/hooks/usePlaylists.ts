@@ -1,27 +1,26 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Playlist {
   id: string;
+  sequential_id: number;
   name: string;
-  description?: string;
-  user_id?: string;
-  status: string;
-  total_videos?: number;
-  total_duration?: string;
+  code: string;
+  user_id: string;
+  is_active?: boolean;
   public_url?: string;
-  assigned_players?: string[];
+  slug?: string;
   created_at: string;
   updated_at: string;
-  created_by?: string;
-  updated_by?: string;
 }
 
 export const usePlaylists = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchPlaylists = async () => {
     try {
@@ -29,7 +28,8 @@ export const usePlaylists = () => {
       const { data, error } = await supabase
         .from('playlists' as any)
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('user_id', user?.id)
+        .order('sequential_id', { ascending: true });
 
       if (error) throw error;
       setPlaylists((data as any) || []);
@@ -46,19 +46,28 @@ export const usePlaylists = () => {
   };
 
   const addPlaylist = async (playlistData: Omit<Playlist, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
     try {
       const { data, error } = await supabase
-        .from('playlists' as any)
+        .from('playlists')
         .insert([{
-          ...playlistData,
-          id: `PL${Date.now().toString(36).toUpperCase()}` // Generate unique ID
+          name: playlistData.name,
+          user_id: user.id,
+          is_active: playlistData.is_active ?? true,
+          code: `PL${Date.now().toString(36).toUpperCase()}` // Generate unique code
+          // sequential_id será gerado automaticamente pelo trigger
         }])
-        .select()
+        .select('*, sequential_id')
         .single();
 
       if (error) throw error;
       
-      setPlaylists(prev => [data as any, ...prev]);
+      // Recarregar lista para manter ordem sequencial
+      await fetchPlaylists();
+      
       toast({
         title: "Sucesso",
         description: "Playlist criada com sucesso",
@@ -76,16 +85,22 @@ export const usePlaylists = () => {
   };
 
   const updatePlaylist = async (id: string, updates: Partial<Playlist>) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
     try {
       const { data, error } = await supabase
         .from('playlists' as any)
         .update(updates)
         .eq('id', id)
+        .eq('user_id', user.id) // ✅ Garantir que só atualize playlists do usuário atual
         .select()
         .single();
 
       if (error) throw error;
       
+      console.log(`📁 Playlist atualizada para usuário ${user.email}:`, data?.name);
       setPlaylists(prev => prev.map(playlist => 
         playlist.id === id ? { ...playlist, ...(data as any) } : playlist
       ));
@@ -107,15 +122,23 @@ export const usePlaylists = () => {
   };
 
   const deletePlaylist = async (id: string) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
     try {
       const { error } = await supabase
         .from('playlists' as any)
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id); // ✅ Garantir que só delete playlists do usuário atual
 
       if (error) throw error;
       
-      setPlaylists(prev => prev.filter(playlist => playlist.id !== id));
+      console.log(`📁 Playlist removida para usuário ${user.email}:`, id);
+      // Recarregar lista para mostrar IDs reorganizados
+      await fetchPlaylists();
+      
       toast({
         title: "Sucesso",
         description: "Playlist removida com sucesso",
@@ -132,8 +155,10 @@ export const usePlaylists = () => {
   };
 
   useEffect(() => {
-    fetchPlaylists();
-  }, []);
+    if (user) {
+      fetchPlaylists();
+    }
+  }, [user?.id]); // ✅ Recarregar quando o usuário mudar
 
   return {
     playlists,
@@ -142,5 +167,6 @@ export const usePlaylists = () => {
     updatePlaylist,
     deletePlaylist,
     refetch: fetchPlaylists,
+    refreshPlaylists: fetchPlaylists,
   };
 };

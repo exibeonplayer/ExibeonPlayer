@@ -13,12 +13,14 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { formatLicenseEndDate, getLicenseStatusColor } from '@/utils/licenseUtils';
+import NotificationDropdown from '@/components/NotificationDropdown';
+import WifiSignal from '@/components/WifiSignal';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Header = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const { profile, userLicense } = useUserProfile();
-  const [notificationCount] = useState(3);
 
   const navigationItems = [
     { name: 'Painel', path: '/', icon: null },
@@ -41,8 +43,12 @@ const Header = () => {
       <div className="flex items-center justify-between px-6 py-3">
         <div className="flex items-center space-x-8">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">E</span>
+            <div className="w-8 h-8 rounded-md overflow-hidden">
+              <img 
+                src="/favicon.ico" 
+                alt="Exibeon Player" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <span className="text-xl font-semibold text-foreground">Exibeon Player</span>
           </Link>
@@ -73,18 +79,11 @@ const Header = () => {
             </div>
           )}
 
-          <Button variant="ghost" size="sm" className="relative">
-            <Bell className="w-5 h-5" />
-            {notificationCount > 0 && (
-              <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 text-xs flex items-center justify-center">
-                {notificationCount}
-              </Badge>
-            )}
-          </Button>
+          <NotificationDropdown />
 
-          <Button variant="ghost" size="sm">
-            <Rss className="w-5 h-5" />
-          </Button>
+          <WifiSignal />
+
+          <ThemeToggle />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -108,9 +107,11 @@ const Header = () => {
                 )}
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Settings className="w-4 h-4 mr-2" />
-                Perfil
+              <DropdownMenuItem asChild>
+                <Link to="/perfil" className="flex items-center">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Perfil
+                </Link>
               </DropdownMenuItem>
               {profile?.is_master && (
                 <>

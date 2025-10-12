@@ -10,43 +10,120 @@ export const useLicenseManagement = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  const checkAndBlockExpiredLicenses = async () => {
+    try {
+      console.log('🔍 Verificando licenças expiradas para bloqueio automático...');
+      
+      // Buscar licenças ativas que estão expiradas há mais de 3 dias
+      const { data: expiredLicenses, error: expiredError } = await supabase
+        .from('licenses')
+        .select('*')
+        .eq('status', 'active')
+        .not('end_date', 'is', null);
+
+      if (expiredError) {
+        console.error('Erro ao buscar licenças expiradas:', expiredError);
+        return;
+      }
+
+      const now = new Date();
+      const expiredToBlock = expiredLicenses?.filter(license => {
+        if (!license.end_date) return false;
+        const endDate = new Date(license.end_date);
+        const gracePeriod = new Date(endDate.getTime() + (3 * 24 * 60 * 60 * 1000)); // 3 dias
+        return now > gracePeriod;
+      }) || [];
+
+      console.log(`📋 Encontradas ${expiredToBlock.length} licenças para bloqueio automático`);
+
+      // Bloquear licenças expiradas
+      for (const license of expiredToBlock) {
+        console.log(`🔒 Bloqueando automaticamente licença expirada: ${license.user_id}`);
+        
+        await supabase
+          .from('licenses')
+          .update({ 
+            status: 'suspended',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', license.id);
+
+        // Enviar comando para players
+        const { data: playerData } = await supabase
+          .from('players')
+          .select('id, name')
+          .eq('user_id', license.user_id);
+
+        if (playerData && playerData.length > 0) {
+          console.log(`📡 Enviando comandos de bloqueio automático para ${playerData.length} players`);
+          
+          // Enviar comando para cada player usando Edge Function
+          for (const player of playerData) {
+            try {
+              const { error: functionError } = await supabase.functions.invoke('send-player-command', {
+                body: {
+                  player_id: player.id,
+                  command: 'block',
+                  payload: { 
+                    reason: 'license_expired',
+                    player_name: player.name
+                  }
+                }
+              });
+
+              if (functionError) {
+                console.error(`❌ Erro ao enviar comando automático para player ${player.name}:`, functionError);
+              } else {
+                console.log(`✅ Comando automático enviado para player ${player.name}`);
+              }
+            } catch (error) {
+              console.error(`❌ Erro ao chamar Edge Function para player ${player.name}:`, error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar licenças expiradas:', error);
+    }
+  };
+
   const fetchAllUsers = async () => {
     try {
       setLoading(true);
       
+      // Primeiro verificar e bloquear licenças expiradas
+      await checkAndBlockExpiredLicenses();
+      
       // Buscar todos os usuários com seus perfis
       const { data: usersData, error: usersError } = await supabase
         .from('user_profiles')
-        .select(`
-          *,
-          licenses (*)
-        `);
+        .select('*');
 
       if (usersError) throw usersError;
 
-      // Buscar emails dos usuários do auth
-      const userIds = (usersData || []).map(u => u.id);
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      // Buscar licenças separadamente
+      const { data: licensesData, error: licensesError } = await supabase
+        .from('licenses')
+        .select('*');
 
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
+      if (licensesError) {
+        console.error('Error fetching licenses:', licensesError);
       }
 
       // Combinar dados
       const usersWithLicenses: UserWithLicense[] = (usersData || []).map((userProfile: any) => {
-        const authUser = authUsers?.users?.find((au: any) => au.id === userProfile.id);
-        const license = userProfile.licenses?.[0]; // Assuming one license per user for now
+        const license = licensesData?.find((l: any) => l.user_id === userProfile.id);
 
         return {
           id: userProfile.id,
-          full_name: userProfile.full_name,
+          full_name: userProfile.name,
           company_name: userProfile.company_name,
           phone: userProfile.phone,
           is_active: userProfile.is_active,
           is_master: userProfile.is_master,
           created_at: userProfile.created_at,
           updated_at: userProfile.updated_at,
-          email: authUser?.email || 'Email não encontrado',
+          email: userProfile.email,
           license: license || undefined
         };
       });
@@ -142,7 +219,8 @@ export const useLicenseManagement = () => {
 
   const blockUnblockLicense = async (userId: string, block: boolean) => {
     try {
-      const newStatus = block ? 'suspended' : 'active';
+      console.log(`🔄 Iniciando ${block ? 'bloqueio' : 'desbloqueio'} da licença para usuário:`, userId);
+      const newStatus = block ? 'suspended' : 'active'; // Usar apenas valores válidos do enum
       
       // Verificar se existe licença
       const { data: existingLicense, error: fetchError } = await supabase
@@ -152,12 +230,15 @@ export const useLicenseManagement = () => {
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('❌ Erro ao buscar licença:', fetchError);
         throw fetchError;
       }
 
+      console.log('📋 Licença existente encontrada:', existingLicense);
       let licenseId;
       if (existingLicense) {
         // Atualizar licença existente
+        console.log(`📝 Atualizando licença existente para status: ${newStatus}`);
         const { data, error } = await supabase
           .from('licenses')
           .update({ 
@@ -168,7 +249,11 @@ export const useLicenseManagement = () => {
           .select()
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Erro ao atualizar licença:', error);
+          throw error;
+        }
+        console.log('✅ Licença atualizada com sucesso:', data);
         licenseId = data.id;
       } else {
         // Criar nova licença com status bloqueado
@@ -203,20 +288,35 @@ export const useLicenseManagement = () => {
       // Buscar todos os players do usuário para enviar comandos
       const { data: playerData } = await supabase
         .from('players')
-        .select('id')
+        .select('id, name')
         .eq('user_id', userId);
 
       if (playerData && playerData.length > 0) {
-        const commands = playerData.map(player => ({
-          player_id: player.id,
-          command: block ? 'block' : 'unblock',
-          payload: { reason: block ? 'license_blocked' : 'license_unblocked' },
-          status: 'pending'
-        }));
+        console.log(`📡 Enviando comandos para ${playerData.length} players`);
+        
+        // Enviar comando para cada player usando Edge Function
+        for (const player of playerData) {
+          try {
+            const { error: functionError } = await supabase.functions.invoke('send-player-command', {
+              body: {
+                player_id: player.id,
+                command: block ? 'block' : 'unblock',
+                payload: { 
+                  reason: block ? 'license_blocked' : 'license_unblocked',
+                  player_name: player.name
+                }
+              }
+            });
 
-        await supabase
-          .from('player_commands')
-          .insert(commands);
+            if (functionError) {
+              console.error(`❌ Erro ao enviar comando para player ${player.name}:`, functionError);
+            } else {
+              console.log(`✅ Comando enviado com sucesso para player ${player.name}`);
+            }
+          } catch (error) {
+            console.error(`❌ Erro ao chamar Edge Function para player ${player.name}:`, error);
+          }
+        }
       }
 
       await fetchAllUsers(); // Recarregar dados
@@ -237,6 +337,82 @@ export const useLicenseManagement = () => {
     }
   };
 
+  const updateMaxPlayers = async (userId: string, newMaxPlayers: number) => {
+    try {
+      // Verificar se existe licença
+      const { data: existingLicense, error: fetchError } = await supabase
+        .from('licenses')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      let result;
+      if (existingLicense) {
+        // Atualizar licença existente
+        const { data, error } = await supabase
+          .from('licenses')
+          .update({ 
+            max_players: newMaxPlayers,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingLicense.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      } else {
+        // Criar nova licença
+        const { data, error } = await supabase
+          .from('licenses')
+          .insert([{
+            user_id: userId,
+            start_date: new Date().toISOString(),
+            end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias padrão
+            status: 'active',
+            max_players: newMaxPlayers
+          }])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      }
+
+      // Registrar ação de auditoria
+      await supabase
+        .from('license_actions')
+        .insert([{
+          license_id: result.id,
+          action_type: 'max_players_update',
+          performed_by: user?.id,
+          details: { 
+            reason: `Quantidade máxima de players alterada para ${newMaxPlayers}` 
+          }
+        }]);
+
+      await fetchAllUsers(); // Recarregar dados
+
+      toast({
+        title: "Sucesso",
+        description: `Quantidade máxima de players atualizada para ${newMaxPlayers}`,
+      });
+
+    } catch (error) {
+      console.error('Error updating max players:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar quantidade de players",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchAllUsers();
   }, []);
@@ -246,6 +422,7 @@ export const useLicenseManagement = () => {
     loading,
     updateLicenseEndDate,
     blockUnblockLicense,
+    updateMaxPlayers,
     refetch: fetchAllUsers
   };
 };
