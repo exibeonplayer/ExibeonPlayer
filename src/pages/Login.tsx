@@ -54,8 +54,8 @@ const Login = () => {
       {/* Layout responsivo */}
       <div className="relative min-h-screen flex flex-col lg:flex-row">
         
-        {/* Conteúdo da esquerda - Informações do sistema */}
-        <div className="flex-1 flex flex-col justify-center px-8 lg:px-16 py-12 lg:py-0">
+  {/* Conteúdo da esquerda - Informações do sistema (escondido em telas pequenas) */}
+  <div className="hidden lg:flex flex-1 flex-col justify-center px-8 lg:px-16 py-12 lg:py-0">
           <div className="max-w-xl animate-fade-in">
             {/* Logo e título */}
             <div className="flex items-center mb-8">
@@ -94,10 +94,10 @@ const Login = () => {
         </div>
 
         {/* Bloco de login - lado direito */}
-        <div className="flex items-center justify-center px-8 py-12 lg:w-[480px] lg:px-16">
-          <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-2xl animate-slide-in">
-            <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold text-foreground mb-2">
+        <div className="flex items-center justify-center px-4 py-8 w-full lg:w-[480px] lg:px-16">
+          <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-2xl animate-slide-in mx-2">
+              <CardHeader className="text-center pb-6">
+              <CardTitle className="text-2xl font-bold text-black mb-2">
                 Acesso ao Sistema
               </CardTitle>
               <CardDescription className="text-muted-foreground">

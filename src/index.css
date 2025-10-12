@@ -163,3 +163,34 @@ All colors MUST be HSL.
     --ring: 212.7 26.8% 83.9%;
   }
 }
+
+/* Mobile / global responsiveness fixes */
+@layer base {
+  /* Prevent horizontal overflow on small screens */
+  html, body, #root {
+    min-width: 0;
+  }
+
+  /* Better box-sizing baseline */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  /* Make images, videos and svgs responsive */
+  img, video, canvas, svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Help long strings break instead of overflowing */
+  .break-words {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* Hide any accidental horizontal overflow (safe fallback) */
+  body {
+    overflow-x: hidden;
+  }
+}

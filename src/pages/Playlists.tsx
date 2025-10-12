@@ -172,7 +172,8 @@ const Playlists = () => {
         </div>
 
         <div className="bg-card rounded-lg border border-border">
-          <Table>
+          <div className="w-full overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
@@ -181,14 +182,14 @@ const Playlists = () => {
                 <TableHead>Status</TableHead>
                 <TableHead>URL</TableHead>
                 <TableHead>Última Atualização</TableHead>
-                <TableHead className="w-[100px]">Ações</TableHead>
+                <TableHead className="sm:w-[100px] w-24">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredPlaylists.map((playlist) => (
                 <TableRow key={playlist.id}>
                   <TableCell className="font-medium">{playlist.sequential_id || playlist.id}</TableCell>
-                  <TableCell>
+                  <TableCell className="break-words">
                     <div className="flex items-center space-x-2">
                       <Video className="w-4 h-4 text-muted-foreground" />
                       <span>{playlist.name}</span>
@@ -260,7 +261,8 @@ const Playlists = () => {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-border">

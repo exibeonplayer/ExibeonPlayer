@@ -236,7 +236,8 @@ const Licencas = () => {
         </div>
 
         <div className="bg-card rounded-lg border border-border">
-          <Table>
+          <div className="w-full overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
@@ -245,16 +246,16 @@ const Licencas = () => {
                 <TableHead>Término da Licença</TableHead>
                 <TableHead>Max Players</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-[250px]">Ações</TableHead>
+                <TableHead className="sm:w-[250px] w-28">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
             {filteredUsers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    {user.full_name || 'Nome não informado'}
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell className="font-medium break-words">
+                      {user.full_name || 'Nome não informado'}
+                    </TableCell>
+                    <TableCell className="break-words">{user.email}</TableCell>
                   <TableCell>
                     {getLicenseStartDate(user)}
                   </TableCell>
@@ -376,6 +377,7 @@ const Licencas = () => {
               ))}
             </TableBody>
           </Table>
+        </div>
         </div>
       </div>
 
