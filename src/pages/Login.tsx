@@ -229,12 +229,7 @@ const Login = () => {
                 </TabsContent>
               </Tabs>
               
-              {/* Credenciais de demonstração */}
-              <div className="pt-4 border-t border-border">
-                <p className="text-xs text-muted-foreground text-center">
-                  <span className="font-medium">Demo:</span> admin@exibeon.com / 123456
-                </p>
-              </div>
+              {/* ...bloco de credenciais de demonstração removido... */}
             </CardContent>
           </Card>
         </div>
