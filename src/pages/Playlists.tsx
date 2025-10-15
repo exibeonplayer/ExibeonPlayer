@@ -58,13 +58,11 @@ const Playlists = () => {
   };
 
   const handleDuplicate = async (playlist: any) => {
-    console.log('Duplicar playlist:', playlist);
-    // TODO: Implementar duplicação
+    alert('Função em desenvolvimento - Duplicação de playlist será criada em breve');
   };
 
   const handleSchedule = (playlist: any) => {
-    console.log('Agendar playlist:', playlist);
-    // TODO: Implementar agendamento
+    alert('Função em desenvolvimento - Agendamento de playlist será criado em breve');
   };
 
   const handleManageItems = (playlist: Playlist) => {

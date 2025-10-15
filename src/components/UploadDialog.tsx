@@ -31,7 +31,7 @@ const UploadDialog = ({ open, onOpenChange }: UploadDialogProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { uploadFile, uploadProgress, resetUpload, isUploading } = useUpload();
-  const { addVideo, refreshVideos } = useVideos();
+  const { addVideo } = useVideos();
   const { user } = useAuth();
   const { addNotification } = useNotificationContext();
 
@@ -102,9 +102,6 @@ const UploadDialog = ({ open, onOpenChange }: UploadDialogProps) => {
         duration_seconds: durationSeconds,
         user_id: user.id,
       });
-
-      // Recarregar lista de vídeos
-      await refreshVideos();
 
       // Adicionar notificação
       addNotification({

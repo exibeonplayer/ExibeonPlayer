@@ -23,16 +23,20 @@ serve(async (req) => {
       player_id, 
       player_name, 
       player_code, 
+      integration_code,  // ← Adicionar suporte para integration_code
       device_info = {}, 
       ip_address 
     } = body
 
+    // Use integration_code se player_code não estiver presente
+    const codeToUse = player_code || integration_code;
+
     // Validate required fields
-    if (!player_id || !player_name || !player_code) {
+    if (!player_id || !player_name || !codeToUse) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'player_id, player_name, and player_code are required' 
+          error: 'player_id, player_name, and player_code (or integration_code) are required' 
         }),
         { 
           status: 400, 
@@ -45,7 +49,7 @@ serve(async (req) => {
     const { data, error } = await supabase.rpc('associate_player', {
       p_player_id: player_id,
       p_player_name: player_name,
-      p_player_code: player_code,
+      p_player_code: codeToUse,  // ← Usar o código correto
       p_device_info: device_info,
       p_ip_address: ip_address
     })

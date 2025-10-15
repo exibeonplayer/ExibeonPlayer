@@ -45,7 +45,8 @@ async function associatePlayer() {
                 'Authorization': `Bearer ${CONFIG.supabase_anon_key}`
             },
             body: JSON.stringify({
-                integration_code: CONFIG.integration_code,
+                integration_code: CONFIG.integration_code,  // ← Mantém compatibilidade
+                player_code: CONFIG.integration_code,       // ← Adiciona campo esperado
                 player_id: CONFIG.player_id,
                 player_name: CONFIG.player_name,
                 device_info: {

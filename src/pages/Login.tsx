@@ -59,8 +59,12 @@ const Login = () => {
           <div className="max-w-xl animate-fade-in">
             {/* Logo e título */}
             <div className="flex items-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
-                <span className="text-white font-bold text-2xl">E</span>
+              <div className="w-16 h-16 rounded-xl overflow-hidden mr-4">
+                <img 
+                  src="/favicon.ico" 
+                  alt="Exibeon Player" 
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
                 <h1 className="text-white text-3xl font-bold">Exibeon Player</h1>

@@ -240,7 +240,13 @@ const Players = () => {
             {/* Generate Code Dialog */}
             <GeneratePlayerCodeModalWrapper
               open={showGenerateCodeDialog}
-              onOpenChange={setShowGenerateCodeDialog}
+              onOpenChange={(open) => {
+                setShowGenerateCodeDialog(open);
+                // Recarregar lista quando o modal for fechado
+                if (!open) {
+                  refetch();
+                }
+              }}
             />
 
         {/* Edit Player Name Dialog */}

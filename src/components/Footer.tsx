@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 
 const Footer = () => {
   // Links externos - configure aqui
-  const PLAYER_DOWNLOAD_LINK = 'https://github.com/exibeonplayer/Download-Exibeon/releases/download/1.0/Instalador.Exibeon-Player.1.0.exe'; // TODO: Adicionar link real do player
+  const PLAYER_DOWNLOAD_LINK = 'https://github.com/exibeonplayer/Download-Exibeon/releases/download/1.0.1/Exibeon.Player-1.0.1.exe'; // TODO: Adicionar link real do player
   const WHATSAPP_LINK = 'https://wa.me/5511999999999'; // TODO: Adicionar número do WhatsApp (formato: 55DDDNÚMERO)
 
   return (
@@ -20,12 +20,14 @@ const Footer = () => {
           >
             Primeiros Passos
           </Link>
-          <Link
-            to="/documentacoes"
+          <button
+            onClick={() => {
+              alert('Função em desenvolvimento - Documentação será criada em breve');
+            }}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Documentações
-          </Link>
+          </button>
           
           {/* Botão de Download do Player */}
           <a
@@ -44,20 +46,17 @@ const Footer = () => {
           </a>
 
           {/* Botão de Contato WhatsApp */}
-          <a
-            href={WHATSAPP_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Button
+            variant="default"
+            size="sm"
+            className="gap-2 bg-green-600 hover:bg-green-700"
+            onClick={() => {
+              alert('Função em desenvolvimento - Chat será criado em breve');
+            }}
           >
-            <Button
-              variant="default"
-              size="sm"
-              className="gap-2 bg-green-600 hover:bg-green-700"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Fale conosco
-            </Button>
-          </a>
+            <MessageCircle className="h-4 w-4" />
+            Fale conosco
+          </Button>
         </div>
       </div>
     </footer>

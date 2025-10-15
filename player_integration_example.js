@@ -73,8 +73,10 @@ class ExibeonPlayer {
                     'Authorization': `Bearer ${this.config.supabase_anon_key}`
                 },
                 body: JSON.stringify({
-                    integration_code: this.config.integration_code,
+                    integration_code: this.config.integration_code,  // ← Mantém compatibilidade
+                    player_code: this.config.integration_code,       // ← Adiciona campo esperado
                     player_id: this.config.player_id,
+                    player_name: this.config.device_name,
                     device_info: this.config.device_info
                 })
             });

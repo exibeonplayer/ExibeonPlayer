@@ -131,7 +131,7 @@ const PlayerCard = ({ player, onEdit, onToggleStatus, onDelete }: PlayerCardProp
         </div>
 
         {/* Informações do Vídeo Atual */}
-        {player.current_video ? (
+        {player.current_video && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               {getPlaybackIcon()}
@@ -141,10 +141,6 @@ const PlayerCard = ({ player, onEdit, onToggleStatus, onDelete }: PlayerCardProp
               {player.current_video.title}
             </div>
             
-          </div>
-        ) : (
-          <div className="text-sm text-muted-foreground text-center py-2">
-            Nenhum vídeo sendo reproduzido
           </div>
         )}
 

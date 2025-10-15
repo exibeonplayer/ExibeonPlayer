@@ -30,7 +30,7 @@ const AddPlaylistDialog = ({ trigger }: AddPlaylistDialogProps) => {
     status: 'draft',
   });
 
-  const { addPlaylist, refreshPlaylists } = usePlaylists();
+  const { addPlaylist } = usePlaylists();
   const { addNotification } = useNotificationContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,9 +43,6 @@ const AddPlaylistDialog = ({ trigger }: AddPlaylistDialogProps) => {
         name: formData.name,
         is_active: formData.status === 'active',
       });
-      
-      // Recarregar lista de playlists
-      await refreshPlaylists();
       
       // Adicionar notificação
       addNotification({
