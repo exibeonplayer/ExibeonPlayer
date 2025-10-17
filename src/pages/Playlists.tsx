@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Calendar, Video, MoreHorizontal, Copy, ExternalLink } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -33,9 +33,20 @@ const Playlists = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [managingPlaylist, setManagingPlaylist] = useState<Playlist | null>(null);
   const [manageDialogOpen, setManageDialogOpen] = useState(false);
-  const { playlists, loading, deletePlaylist, refreshPlaylists } = usePlaylists();
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { playlists, loading, deletePlaylist, refreshPlaylists, refetch, forceRefresh, refreshCounter } = usePlaylists();
   const licenseStatus = useLicenseStatus();
   const { toast } = useToast();
+
+  // Debug: Log quando loading muda
+  useEffect(() => {
+    console.log('🔄 Playlists: Estado loading mudou para:', loading);
+  }, [loading]);
+
+  // Debug: Log quando playlists mudam
+  useEffect(() => {
+    console.log('🔄 Playlists: Lista de playlists mudou:', playlists.length, 'itens');
+  }, [playlists]);
 
   const filteredPlaylists = playlists.filter(playlist =>
     playlist.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -47,10 +58,6 @@ const Playlists = () => {
     }
   };
 
-  const handleView = (playlist: any) => {
-    console.log('Visualizar playlist:', playlist);
-    // TODO: Implementar visualização
-  };
 
   const handleEdit = (playlist: Playlist) => {
     setEditingPlaylist(playlist);
@@ -70,12 +77,15 @@ const Playlists = () => {
     setManageDialogOpen(true);
   };
 
-  const handleManageDialogClose = async (open: boolean) => {
+  // Função para recarregar playlists quando há alterações
+  const handlePlaylistUpdated = () => {
+    console.log('🔄 Playlists: Forçando refresh após alteração...');
+    forceRefresh();
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleManageDialogClose = (open: boolean) => {
     setManageDialogOpen(open);
-    if (!open) {
-      // Recarregar playlists quando fechar o modal
-      await refreshPlaylists();
-    }
   };
 
   const handleCopyPlaylistUrl = async (playlist: Playlist) => {
@@ -153,7 +163,9 @@ const Playlists = () => {
           <LicenseRestricted 
             licenseStatus={licenseStatus}
           >
+            <div className="flex gap-2">
             <AddPlaylistDialog />
+          </div>
           </LicenseRestricted>
         </div>
 
@@ -169,7 +181,7 @@ const Playlists = () => {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border border-border">
+        <div className="bg-card rounded-lg border border-border" key={`${refreshKey}-${refreshCounter}`}>
           <div className="w-full overflow-x-auto">
             <Table>
             <TableHeader>
@@ -227,9 +239,6 @@ const Playlists = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleView(playlist)}>
-                            Visualizar
-                          </DropdownMenuItem>
                           <LicenseRestricted 
                             licenseStatus={licenseStatus}
                           >
@@ -292,7 +301,9 @@ const Playlists = () => {
           playlist={managingPlaylist}
           open={manageDialogOpen}
           onOpenChange={handleManageDialogClose}
+          onPlaylistUpdated={handlePlaylistUpdated}
         />
+
       </div>
     </Layout>
   );

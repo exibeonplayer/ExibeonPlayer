@@ -38,14 +38,16 @@ import {
 import { usePlaylistItems, PlaylistItem } from '@/hooks/usePlaylistItems';
 import { useVideos, Video as VideoType } from '@/hooks/useVideos';
 import { Playlist } from '@/hooks/usePlaylists';
+import { useRefresh } from '@/contexts/RefreshContext';
 
 interface ManagePlaylistItemsDialogProps {
   playlist: Playlist | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onPlaylistUpdated?: () => void; // Callback para notificar atualização da playlist
 }
 
-const ManagePlaylistItemsDialog = ({ playlist, open, onOpenChange }: ManagePlaylistItemsDialogProps) => {
+const ManagePlaylistItemsDialog = ({ playlist, open, onOpenChange, onPlaylistUpdated }: ManagePlaylistItemsDialogProps) => {
   const [selectedVideoId, setSelectedVideoId] = useState<string>('');
   const { videos } = useVideos();
   const { 
@@ -56,6 +58,7 @@ const ManagePlaylistItemsDialog = ({ playlist, open, onOpenChange }: ManagePlayl
     reorderPlaylistItems,
     refreshPlaylistItems 
   } = usePlaylistItems(playlist?.id);
+  const { triggerRefresh } = useRefresh();
 
   // Debug: Log dos dados recebidos
   useEffect(() => {
@@ -72,23 +75,48 @@ const ManagePlaylistItemsDialog = ({ playlist, open, onOpenChange }: ManagePlayl
     if (!selectedVideoId || !playlist) return;
     
     try {
+      console.log('🎬 Adicionando vídeo à playlist...');
+      // 1. Chamar função de salvar (assíncrona)
       await addPlaylistItem(playlist.id, selectedVideoId);
-      setSelectedVideoId('');
-      // Recarregar itens após adicionar
+      
+      // 2. Aguardar retorno de sucesso (status 200/201)
+      console.log('✅ Vídeo adicionado com sucesso ao servidor');
+      
+      // 3. Recarregar lista local
       await refreshPlaylistItems();
+      
+      // 4. Notificar página principal para recarregar
+      if (onPlaylistUpdated) {
+        console.log('🔄 Notificando página principal para recarregar');
+        onPlaylistUpdated();
+      }
+      
+      setSelectedVideoId('');
     } catch (error) {
-      console.error('Error adding video:', error);
+      console.error('❌ Erro ao adicionar vídeo:', error);
     }
   };
 
   const handleRemoveItem = async (itemId: string) => {
     if (window.confirm('Tem certeza que deseja remover este vídeo da playlist?')) {
       try {
+        console.log('🗑️ Removendo vídeo da playlist...');
+        // 1. Chamar função de salvar (assíncrona)
         await removePlaylistItem(itemId);
-        // Recarregar itens após remover
+        
+        // 2. Aguardar retorno de sucesso (status 200/201)
+        console.log('✅ Vídeo removido com sucesso do servidor');
+        
+        // 3. Recarregar lista local
         await refreshPlaylistItems();
+        
+        // 4. Notificar página principal para recarregar
+        if (onPlaylistUpdated) {
+          console.log('🔄 Notificando página principal para recarregar');
+          onPlaylistUpdated();
+        }
       } catch (error) {
-        console.error('Error removing item:', error);
+        console.error('❌ Erro ao remover vídeo:', error);
       }
     }
   };
@@ -333,9 +361,22 @@ const ManagePlaylistItemsDialog = ({ playlist, open, onOpenChange }: ManagePlayl
           </Button>
           <Button 
             onClick={async () => {
-              // Recarregar dados antes de fechar
-              await refreshPlaylistItems();
-              onOpenChange(false);
+              try {
+                console.log('💾 Salvando alterações...');
+                // 1. Recarregar dados locais para garantir consistência
+                await refreshPlaylistItems();
+                
+                // 2. Notificar página principal para recarregar
+                if (onPlaylistUpdated) {
+                  console.log('🔄 Notificando página principal para recarregar após salvar');
+                  onPlaylistUpdated();
+                }
+                
+                // 3. Fechar modal
+                onOpenChange(false);
+              } catch (error) {
+                console.error('❌ Erro ao salvar alterações:', error);
+              }
             }}
           >
             Salvar e Fechar

@@ -21,9 +21,30 @@ import { useNotificationContext } from '@/contexts/NotificationContext';
 interface UploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onContentUploaded?: () => void;
 }
 
-const UploadDialog = ({ open, onOpenChange }: UploadDialogProps) => {
+// Função para calcular duração do vídeo
+const getVideoDuration = (file: File): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    
+    video.onloadedmetadata = () => {
+      window.URL.revokeObjectURL(video.src);
+      resolve(Math.round(video.duration));
+    };
+    
+    video.onerror = () => {
+      window.URL.revokeObjectURL(video.src);
+      reject(new Error('Erro ao carregar metadados do vídeo'));
+    };
+    
+    video.src = URL.createObjectURL(file);
+  });
+};
+
+const UploadDialog = ({ open, onOpenChange, onContentUploaded }: UploadDialogProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -89,10 +110,20 @@ const UploadDialog = ({ open, onOpenChange }: UploadDialogProps) => {
       // Determinar tipo de conteúdo
       const contentType = selectedFile.type.startsWith('video/') ? 'video' : 'image';
       
-      // Calcular duração para vídeos (simplificado - em produção, use uma biblioteca como ffprobe)
-      const durationSeconds = contentType === 'video' ? null : undefined;
+      // Calcular duração para vídeos
+      let durationSeconds = undefined;
+      if (contentType === 'video') {
+        try {
+          durationSeconds = await getVideoDuration(selectedFile);
+          console.log(`🎬 Duração calculada para ${selectedFile.name}: ${durationSeconds} segundos`);
+        } catch (error) {
+          console.warn(`⚠️ Não foi possível calcular duração para ${selectedFile.name}:`, error);
+          // Continua sem duração se houver erro
+        }
+      }
       
       // Adicionar ao banco de dados
+      console.log('🎬 UploadDialog: Adicionando vídeo ao banco de dados...');
       await addVideo({
         title,
         description: description || undefined,
@@ -102,6 +133,7 @@ const UploadDialog = ({ open, onOpenChange }: UploadDialogProps) => {
         duration_seconds: durationSeconds,
         user_id: user.id,
       });
+      console.log('✅ UploadDialog: Vídeo adicionado com sucesso!');
 
       // Adicionar notificação
       addNotification({
@@ -109,6 +141,11 @@ const UploadDialog = ({ open, onOpenChange }: UploadDialogProps) => {
         title: 'Vídeo Enviado',
         message: `O arquivo "${title || selectedFile.name}" foi enviado com sucesso.`
       });
+
+      // Chamar callback para refresh da página pai
+      if (onContentUploaded) {
+        onContentUploaded();
+      }
 
       // Resetar formulário
       setSelectedFile(null);

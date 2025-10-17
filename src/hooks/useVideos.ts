@@ -20,6 +20,7 @@ export interface Video {
 export const useVideos = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshCounter, setRefreshCounter] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -31,6 +32,7 @@ export const useVideos = () => {
     }
 
     try {
+      console.log('🔄 useVideos: Iniciando fetchVideos...');
       setLoading(true);
       const { data, error } = await supabase
         .from('media_files' as any)
@@ -40,7 +42,7 @@ export const useVideos = () => {
 
       if (error) throw error;
       
-      console.log(`📁 Carregando vídeos para usuário ${user.email}:`, data?.length || 0, 'arquivos');
+      console.log(`✅ useVideos: Dados recebidos:`, data?.length || 0, 'arquivos');
       setVideos((data as any) || []);
     } catch (error) {
       console.error('Error fetching videos:', error);
@@ -52,6 +54,12 @@ export const useVideos = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const forceRefresh = () => {
+    console.log('🔄 useVideos: Forçando refresh...');
+    setRefreshCounter(prev => prev + 1);
+    fetchVideos();
   };
 
   const addVideo = async (videoData: Omit<Video, 'id' | 'created_at' | 'updated_at'>) => {
@@ -75,6 +83,7 @@ export const useVideos = () => {
       if (error) throw error;
       
       console.log(`📁 Vídeo adicionado para usuário ${user.email}:`, data?.title);
+      console.log('🔄 useVideos: Atualizando lista de vídeos automaticamente');
       setVideos(prev => [data as any, ...prev]);
       toast({
         title: "Sucesso",
@@ -162,6 +171,7 @@ export const useVideos = () => {
 
   useEffect(() => {
     if (user) {
+      console.log('🔄 useVideos: Recarregando vídeos para usuário:', user.email);
       fetchVideos();
     }
   }, [user]); // ✅ Recarregar quando o usuário mudar
@@ -174,5 +184,7 @@ export const useVideos = () => {
     deleteVideo,
     refetch: fetchVideos,
     refreshVideos: fetchVideos,
+    forceRefresh,
+    refreshCounter,
   };
 };

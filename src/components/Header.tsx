@@ -42,15 +42,20 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border shadow-sm">
       <div className="flex items-center justify-between px-6 py-3">
         <div className="flex items-center space-x-8">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-md overflow-hidden">
+          <Link to="/" className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-md overflow-hidden">
               <img 
                 src="/favicon.ico" 
                 alt="Exibeon Player" 
                 className="w-full h-full object-contain"
               />
             </div>
-            <span className="text-xl font-semibold text-foreground">Exibeon Player</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-semibold text-foreground">Exibeon Player</span>
+              <div className="flex justify-end">
+                <span className="text-sm text-muted-foreground">Midia OOH</span>
+              </div>
+            </div>
           </Link>
 
           <nav className="hidden md:flex items-center space-x-1">

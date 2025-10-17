@@ -3,6 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
+export interface PlaylistItem {
+  id: string;
+  display_order: number;
+  duration_override_seconds?: number;
+  media_files: {
+    id: string;
+    title: string;
+    description?: string;
+    content_type: 'video' | 'image';
+    file_url: string;
+    thumbnail_url?: string;
+    duration_seconds?: number;
+  };
+}
+
 export interface Playlist {
   id: string;
   sequential_id: number;
@@ -14,24 +29,44 @@ export interface Playlist {
   slug?: string;
   created_at: string;
   updated_at: string;
+  playlist_items?: PlaylistItem[];
 }
 
 export const usePlaylists = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshCounter, setRefreshCounter] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
 
   const fetchPlaylists = async () => {
     try {
+      console.log('🔄 usePlaylists: Iniciando fetchPlaylists...');
       setLoading(true);
       const { data, error } = await supabase
         .from('playlists' as any)
-        .select('*')
+        .select(`
+          *,
+          playlist_items (
+            id,
+            display_order,
+            duration_override_seconds,
+            media_files (
+              id,
+              title,
+              description,
+              content_type,
+              file_url,
+              thumbnail_url,
+              duration_seconds
+            )
+          )
+        `)
         .eq('user_id', user?.id)
         .order('sequential_id', { ascending: true });
 
       if (error) throw error;
+      console.log('✅ usePlaylists: Dados recebidos:', data?.length || 0, 'playlists');
       setPlaylists((data as any) || []);
     } catch (error) {
       console.error('Error fetching playlists:', error);
@@ -43,6 +78,12 @@ export const usePlaylists = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const forceRefresh = () => {
+    console.log('🔄 usePlaylists: Forçando refresh...');
+    setRefreshCounter(prev => prev + 1);
+    fetchPlaylists();
   };
 
   const addPlaylist = async (playlistData: Omit<Playlist, 'id' | 'created_at' | 'updated_at'>) => {
@@ -66,6 +107,7 @@ export const usePlaylists = () => {
       if (error) throw error;
       
       // Recarregar lista para manter ordem sequencial
+      console.log('🔄 usePlaylists: Recarregando lista após adicionar playlist');
       await fetchPlaylists();
       
       toast({
@@ -137,6 +179,7 @@ export const usePlaylists = () => {
       
       console.log(`📁 Playlist removida para usuário ${user.email}:`, id);
       // Recarregar lista para mostrar IDs reorganizados
+      console.log('🔄 usePlaylists: Recarregando lista após deletar playlist');
       await fetchPlaylists();
       
       toast({
@@ -168,5 +211,7 @@ export const usePlaylists = () => {
     deletePlaylist,
     refetch: fetchPlaylists,
     refreshPlaylists: fetchPlaylists,
+    forceRefresh,
+    refreshCounter,
   };
 };

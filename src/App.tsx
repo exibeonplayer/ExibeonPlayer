@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { RefreshProvider } from "@/contexts/RefreshContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MasterRoute from "@/components/MasterRoute";
 import { useLicenseChecker } from "@/hooks/useLicenseChecker";
@@ -37,6 +38,7 @@ const App = () => {
       <BrowserRouter>
         <AuthProvider>
           <NotificationProvider>
+            <RefreshProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={
@@ -82,6 +84,7 @@ const App = () => {
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+            </RefreshProvider>
           </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>

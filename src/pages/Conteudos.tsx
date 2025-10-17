@@ -14,13 +14,31 @@ import UploadDialog from '@/components/UploadDialog';
 import LicenseRestricted from '@/components/LicenseRestricted';
 import { useVideos } from '@/hooks/useVideos';
 import { useLicenseStatus } from '@/hooks/useLicenseStatus';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const Conteudos = () => {
-  const { videos, loading, deleteVideo } = useVideos();
+  const { videos, loading, deleteVideo, refetch, forceRefresh, refreshCounter } = useVideos();
   const licenseStatus = useLicenseStatus();
   const [searchTerm, setSearchTerm] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Debug: Log quando loading muda
+  useEffect(() => {
+    console.log('🔄 Conteudos: Estado loading mudou para:', loading);
+  }, [loading]);
+
+  // Debug: Log quando videos mudam
+  useEffect(() => {
+    console.log('🔄 Conteudos: Lista de vídeos mudou:', videos.length, 'arquivos');
+  }, [videos]);
+
+  // Função para recarregar vídeos quando há alterações
+  const handleContentUpdated = () => {
+    console.log('🔄 Conteudos: Forçando refresh após alteração...');
+    forceRefresh();
+    setRefreshKey(prev => prev + 1);
+  };
 
   const filteredVideos = videos.filter(video =>
     video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,9 +62,15 @@ const Conteudos = () => {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este arquivo?')) {
-      await deleteVideo(id);
+      try {
+        await deleteVideo(id);
+        handleContentUpdated();
+      } catch (error) {
+        console.error('❌ Erro ao excluir arquivo:', error);
+      }
     }
   };
+
 
   if (loading) {
     return (
@@ -68,18 +92,21 @@ const Conteudos = () => {
               Gerencie sua biblioteca de vídeos e imagens
             </p>
           </div>
-          <LicenseRestricted 
-            licenseStatus={licenseStatus}
-          >
-            <Button 
-              className="bg-primary hover:bg-primary-hover"
-              onClick={() => setShowUploadDialog(true)}
+          <div className="flex gap-2">
+            <LicenseRestricted 
+              licenseStatus={licenseStatus}
             >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload de Arquivo
-            </Button>
-          </LicenseRestricted>
+              <Button 
+                className="bg-primary hover:bg-primary-hover"
+                onClick={() => setShowUploadDialog(true)}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload de Arquivo
+              </Button>
+            </LicenseRestricted>
+          </div>
         </div>
+
 
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -108,7 +135,7 @@ const Conteudos = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" key={`${refreshKey}-${refreshCounter}`}>
             {filteredVideos.map((video) => (
               <Card key={video.id} className="group hover:shadow-md transition-shadow">
                 <CardContent className="p-0">
@@ -135,12 +162,9 @@ const Conteudos = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Visualizar</DropdownMenuItem>
-                            <DropdownMenuItem>Download</DropdownMenuItem>
                             <LicenseRestricted 
                               licenseStatus={licenseStatus}
                             >
-                              <DropdownMenuItem>Editar</DropdownMenuItem>
                               <DropdownMenuItem 
                                 className="text-destructive"
                                 onClick={() => handleDelete(video.id)}
@@ -211,7 +235,9 @@ const Conteudos = () => {
         <UploadDialog 
           open={showUploadDialog}
           onOpenChange={setShowUploadDialog}
+          onContentUploaded={handleContentUpdated}
         />
+
       </div>
     </Layout>
   );

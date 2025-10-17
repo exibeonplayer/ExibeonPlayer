@@ -12,7 +12,7 @@ const Layout = ({ children }: LayoutProps) => {
     <LicenseStatusProvider>
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="pt-20 pb-16 px-6">
+        <main className="pt-20 pb-24 px-6">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

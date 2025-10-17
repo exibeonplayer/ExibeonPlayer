@@ -18,6 +18,7 @@ import GeneratePlayerCodeModalWrapper from '@/components/GeneratePlayerCodeModal
 import { usePlayerAssociationsFixed } from '@/hooks/usePlayerAssociationsFixed';
 import { usePlayerLimit } from '@/hooks/usePlayerLimit';
 import { useToast } from '@/hooks/use-toast';
+import { useVideos } from '@/hooks/useVideos';
 import { supabase } from '@/integrations/supabase/client';
 
 const Players = () => {
@@ -30,7 +31,29 @@ const Players = () => {
 
   const { players, loading, deactivatePlayer, activatePlayer, deletePlayer, updatePlayerName, refetch } = usePlayerAssociationsFixed();
   const { playerLimit, loading: limitLoading, refetch: refetchLimit } = usePlayerLimit();
+  const { videos } = useVideos();
   const { toast } = useToast();
+
+  // Calcular estatísticas para os cards
+  const activePlayers = players.filter(player => {
+    return player.is_online || false;
+  }).length;
+  const totalPlayers = players.length;
+  const totalContent = videos.length;
+
+  // Calcular uptime médio
+  const calculateAverageUptime = () => {
+    if (players.length === 0) return '0%';
+    
+    const totalUptime = players.reduce((sum, player) => {
+      return sum + (player.uptime_seconds || 0);
+    }, 0);
+    
+    const totalSeconds = players.length * 86400; // 24 horas em segundos
+    const uptimePercentage = (totalUptime / totalSeconds) * 100;
+    
+    return `${uptimePercentage.toFixed(1)}%`;
+  };
 
   // Carregar dados apenas quando a página é carregada
   useEffect(() => {
@@ -57,7 +80,6 @@ const Players = () => {
   );
 
   const onlinePlayers = players.filter(p => p.is_online).length;
-  const totalPlayers = players.length;
 
   const handleEditPlayer = (player: any) => {
     setEditingPlayer(player);
@@ -235,6 +257,51 @@ const Players = () => {
           <p className="text-sm text-muted-foreground">
             Mostrando {filteredPlayers.length} de {totalPlayers} players
           </p>
+        </div>
+
+        {/* Cards de Estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Uptime Médio</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-success">
+                {calculateAverageUptime()}
+              </div>
+              <p className="text-muted-foreground text-sm mt-1">
+                Tempo de atividade dos players
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Conteúdo Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">
+                {totalContent}
+              </div>
+              <p className="text-muted-foreground text-sm mt-1">
+                Vídeos e imagens
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Taxa de Conectividade</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-success">
+                {totalPlayers > 0 ? `${Math.round((activePlayers / totalPlayers) * 100)}%` : '0%'}
+              </div>
+              <p className="text-muted-foreground text-sm mt-1">
+                Players conectados
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
             {/* Generate Code Dialog */}

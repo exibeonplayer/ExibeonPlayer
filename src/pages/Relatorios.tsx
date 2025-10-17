@@ -184,50 +184,6 @@ const Relatorios = () => {
           </CardContent>
         </Card>
 
-        {/* Cards de Métricas Adicionais */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Uptime Médio</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-success">
-                {calculateAverageUptime()}
-              </div>
-              <p className="text-muted-foreground text-sm mt-1">
-                Tempo de atividade dos players
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Conteúdo Total</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">
-                {totalContent}
-              </div>
-              <p className="text-muted-foreground text-sm mt-1">
-                Vídeos e imagens
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Taxa de Conectividade</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-success">
-                {totalPlayers > 0 ? `${Math.round((activePlayers / totalPlayers) * 100)}%` : '0%'}
-              </div>
-              <p className="text-muted-foreground text-sm mt-1">
-                Players conectados
-              </p>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </Layout>
   );

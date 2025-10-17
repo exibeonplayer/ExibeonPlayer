@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus } from 'lucide-react';
 import { usePlaylists } from '@/hooks/usePlaylists';
 import { useNotificationContext } from '@/contexts/NotificationContext';
+import { useRefresh } from '@/contexts/RefreshContext';
 
 interface AddPlaylistDialogProps {
   trigger?: React.ReactNode;
@@ -32,6 +33,7 @@ const AddPlaylistDialog = ({ trigger }: AddPlaylistDialogProps) => {
 
   const { addPlaylist } = usePlaylists();
   const { addNotification } = useNotificationContext();
+  const { triggerRefresh } = useRefresh();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +52,11 @@ const AddPlaylistDialog = ({ trigger }: AddPlaylistDialogProps) => {
         title: 'Playlist Criada',
         message: `A playlist "${formData.name}" foi criada com sucesso.`
       });
+      
+      console.log('✅ AddPlaylistDialog: Playlist criada com sucesso!');
+      
+      // Forçar refresh global
+      triggerRefresh();
       
       setFormData({
         name: '',
