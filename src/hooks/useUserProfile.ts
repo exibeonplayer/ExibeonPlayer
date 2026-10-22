@@ -42,7 +42,7 @@ export const useUserProfile = () => {
 
     try {
       setLoading(true);
-      
+
       // Buscar perfil do usuário
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
@@ -54,15 +54,14 @@ export const useUserProfile = () => {
       // Se não encontrou perfil, criar um básico
       if (!profileData || profileData.length === 0) {
         console.log('No profile found, creating basic profile for user:', user.id);
-        
+
         // Criar perfil básico
         const { data: newProfile, error: createError } = await supabase
           .from('user_profiles')
           .insert([{
             id: user.id,
             email: user.email || '',
-            name: user.user_metadata?.name || user.email?.split('@')[0] || 'Usuário',
-            is_master: false
+            name: user.user_metadata?.name || user.email?.split('@')[0] || 'Usuário'
           }])
           .select()
           .single();

@@ -7,7 +7,6 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   login: (email: string, password: string) => Promise<{ error: any }>;
-  signup: (email: string, password: string) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -52,33 +51,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signup = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
-    });
-
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar conta",
-        description: error.message
-      });
-    } else {
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Você foi logado automaticamente."
-      });
-    }
-
-    return { error };
-  };
-
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -111,7 +83,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     session,
     login,
-    signup,
     logout,
     loading
   };

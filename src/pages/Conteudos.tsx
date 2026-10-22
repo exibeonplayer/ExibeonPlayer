@@ -1,3 +1,7 @@
+import InformationOverlaysDialog from '@/components/InformationOverlaysDialog';
+import { videoThumbnail } from '@/lib/video-thumbnail';
+import { useUpload } from '@/hooks/useUpload';
+import { useToast } from '@/hooks/use-toast';
 import { Upload, Video, Image as ImageIcon, MoreHorizontal, Search, Filter } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -16,9 +20,30 @@ import { useVideos } from '@/hooks/useVideos';
 import { useLicenseStatus } from '@/hooks/useLicenseStatus';
 import { useState, useEffect } from 'react';
 
+function ContentThumbnail({video}: {video: {title:string;content_type:string;file_url:string;thumbnail_url?:string}}) {
+  const url=video.content_type==='image'?video.file_url:video.thumbnail_url;
+  const [failed,setFailed]=useState(false);
+  useEffect(()=>setFailed(false),[url]);
+  return url&&!failed ? <img src={url} alt={`Prévia de ${video.title}`} loading="lazy" className="h-full w-full object-contain" onError={()=>setFailed(true)}/> : video.content_type==='video'?<Video className="w-12 h-12 text-muted-foreground"/>:<ImageIcon className="w-12 h-12 text-muted-foreground"/>;
+}
+
 const Conteudos = () => {
-  const { videos, loading, deleteVideo, refetch, forceRefresh, refreshCounter } = useVideos();
+  const { videos, loading, deleteVideo, updateVideo, refetch, forceRefresh, refreshCounter } = useVideos();
   const licenseStatus = useLicenseStatus();
+  const [showInformation, setShowInformation] = useState(false);
+  const [thumbnailBusy, setThumbnailBusy] = useState<string | null>(null);
+  const { uploadFile } = useUpload();
+  const { toast } = useToast();
+  const generateThumbnail = async (video: typeof videos[number]) => {
+    if (thumbnailBusy) return;
+    setThumbnailBusy(video.id);
+    try {
+      const preview = await videoThumbnail(video.file_url);
+      const thumbnail_url = await uploadFile(preview.file, undefined, {silent:true});
+      await updateVideo(video.id, {thumbnail_url, duration_seconds:preview.duration});
+    } catch { toast({title:'Miniatura indisponível',description:'Não foi possível ler este vídeo. Tente novamente ou envie um arquivo MP4 compatível.',variant:'destructive'}); }
+    finally { setThumbnailBusy(null); }
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -92,11 +117,12 @@ const Conteudos = () => {
               Gerencie sua biblioteca de vídeos e imagens
             </p>
           </div>
-          <div className="flex gap-2">
-            <LicenseRestricted 
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setShowInformation(true)}>Informações e faixa de texto</Button>
+            <LicenseRestricted
               licenseStatus={licenseStatus}
             >
-              <Button 
+              <Button
                 className="bg-primary hover:bg-primary-hover"
                 onClick={() => setShowUploadDialog(true)}
               >
@@ -140,32 +166,29 @@ const Conteudos = () => {
               <Card key={video.id} className="group hover:shadow-md transition-shadow">
                 <CardContent className="p-0">
                   <div className="relative">
-                    <div className="aspect-video bg-muted rounded-t-lg flex items-center justify-center">
-                      {video.content_type === 'video' ? (
-                        <Video className="w-12 h-12 text-muted-foreground" />
-                      ) : (
-                        <ImageIcon className="w-12 h-12 text-muted-foreground" />
-                      )}
+                    <div className="aspect-video bg-muted rounded-t-lg flex items-center justify-center overflow-hidden">
+                      <ContentThumbnail video={video}/>
                     </div>
                     <div className="absolute top-2 right-2">
-                      <LicenseRestricted 
+                      <LicenseRestricted
                         licenseStatus={licenseStatus}
                       >
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 bg-background/90"
                             >
-                              <MoreHorizontal className="w-4 h-4" />
+                              <MoreHorizontal className="w-4 h-4" /><span className="sr-only">Opções de {video.title}</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <LicenseRestricted 
+                            {video.content_type === 'video' && <DropdownMenuItem disabled={!!thumbnailBusy} onClick={() => generateThumbnail(video)}>{thumbnailBusy === video.id ? 'Gerando miniatura…' : 'Gerar miniatura'}</DropdownMenuItem>}
+                            <LicenseRestricted
                               licenseStatus={licenseStatus}
                             >
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={() => handleDelete(video.id)}
                               >
@@ -214,7 +237,7 @@ const Conteudos = () => {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t border-border">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
           <p className="text-sm text-muted-foreground">
             Mostrando {filteredVideos.length} de {videos.length} arquivos
           </p>
@@ -231,8 +254,9 @@ const Conteudos = () => {
           </div>
         </div>
 
+        <InformationOverlaysDialog open={showInformation} onOpenChange={setShowInformation} />
         {/* Upload Dialog */}
-        <UploadDialog 
+        <UploadDialog
           open={showUploadDialog}
           onOpenChange={setShowUploadDialog}
           onContentUploaded={handleContentUpdated}

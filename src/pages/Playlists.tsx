@@ -1,3 +1,4 @@
+import {platformLabels,platformValue} from '@/lib/playlist-platform';
 import { useState, useEffect } from 'react';
 import { Plus, Search, Calendar, Video, MoreHorizontal, Copy, ExternalLink } from 'lucide-react';
 import Layout from '@/components/Layout';
@@ -20,7 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import AddPlaylistDialog from '@/components/AddPlaylistDialog';
 import EditPlaylistDialog from '@/components/EditPlaylistDialog';
-import ManagePlaylistItemsDialog from '@/components/ManagePlaylistItemsDialog';
+
 import PlaylistStats from '@/components/PlaylistStats';
 import LicenseRestricted from '@/components/LicenseRestricted';
 import { usePlaylists, Playlist } from '@/hooks/usePlaylists';
@@ -60,21 +61,19 @@ const Playlists = () => {
 
 
   const handleEdit = (playlist: Playlist) => {
-    setEditingPlaylist(playlist);
-    setEditDialogOpen(true);
+    window.open(`/playlists/${encodeURIComponent(playlist.id)}`,'_blank','noopener,noreferrer');
   };
 
   const handleDuplicate = async (playlist: any) => {
-    alert('Função em desenvolvimento - Duplicação de playlist será criada em breve');
+    alert('A duplicação de playlists ainda não está disponível.');
   };
 
   const handleSchedule = (playlist: any) => {
-    alert('Função em desenvolvimento - Agendamento de playlist será criado em breve');
+    window.open(`/playlists/${encodeURIComponent(playlist.id)}?view=agenda`,'_blank','noopener,noreferrer');
   };
 
   const handleManageItems = (playlist: Playlist) => {
-    setManagingPlaylist(playlist);
-    setManageDialogOpen(true);
+    window.open(`/playlists/${encodeURIComponent(playlist.id)}`,'_blank','noopener,noreferrer');
   };
 
   // Função para recarregar playlists quando há alterações
@@ -92,13 +91,13 @@ const Playlists = () => {
     try {
       // Usar a URL pública se disponível, senão criar uma URL baseada no slug ou ID
       let playlistUrl = playlist.public_url;
-      
+
       if (!playlistUrl) {
         // Criar URL baseada no slug se disponível, senão usar ID
         const identifier = playlist.slug || playlist.id;
         playlistUrl = `${window.location.origin}/playlist/${identifier}`;
       }
-      
+
       // Tentar usar a API moderna do clipboard
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(playlistUrl);
@@ -112,17 +111,17 @@ const Playlists = () => {
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        
+
         try {
           document.execCommand('copy');
         } catch (err) {
           console.error('Fallback copy failed:', err);
           throw new Error('Copy not supported');
         }
-        
+
         document.body.removeChild(textArea);
       }
-      
+
       toast({
         title: "URL Copiada",
         description: `URL da playlist "${playlist.name}" copiada para a área de transferência`,
@@ -160,11 +159,11 @@ const Playlists = () => {
               Organize e gerencie suas listas de reprodução
             </p>
           </div>
-          <LicenseRestricted 
+          <LicenseRestricted
             licenseStatus={licenseStatus}
           >
             <div className="flex gap-2">
-            <AddPlaylistDialog />
+            <AddPlaylistDialog onCreated={() => setSearchTerm('')} />
           </div>
           </LicenseRestricted>
         </div>
@@ -198,11 +197,11 @@ const Playlists = () => {
             <TableBody>
               {filteredPlaylists.map((playlist) => (
                 <TableRow key={playlist.id}>
-                  <TableCell className="font-medium">{playlist.sequential_id || playlist.id}</TableCell>
+                  <TableCell className="font-medium">{playlist.sequential_id ? String(playlist.sequential_id).padStart(2,'0') : playlist.id}</TableCell>
                   <TableCell className="break-words">
                     <div className="flex items-center space-x-2">
                       <Video className="w-4 h-4 text-muted-foreground" />
-                      <span>{playlist.name}</span>
+                      <span><a className="hover:underline font-medium" href={`/playlists/${encodeURIComponent(playlist.id)}`} target="_blank" rel="noopener noreferrer">{playlist.name}</a><span className="block text-xs text-muted-foreground">{platformLabels[platformValue(playlist.target_platform)]}</span></span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -229,7 +228,7 @@ const Playlists = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <LicenseRestricted 
+                    <LicenseRestricted
                       licenseStatus={licenseStatus}
                     >
                       <DropdownMenu>
@@ -239,14 +238,14 @@ const Playlists = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <LicenseRestricted 
+                          <LicenseRestricted
                             licenseStatus={licenseStatus}
                           >
                             <DropdownMenuItem onClick={() => handleEdit(playlist)}>
                               Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleManageItems(playlist)}>
-                              Gerenciar Vídeos
+                              Abrir editor da playlist
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDuplicate(playlist)}>
                               Duplicar
@@ -254,7 +253,7 @@ const Playlists = () => {
                             <DropdownMenuItem onClick={() => handleSchedule(playlist)}>
                               Agendar
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-destructive"
                               onClick={() => handleDelete(playlist.id)}
                             >
@@ -272,7 +271,7 @@ const Playlists = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-border">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
           <p className="text-sm text-muted-foreground">
             Mostrando {filteredPlaylists.length} de {playlists.length} playlists
           </p>
@@ -296,13 +295,7 @@ const Playlists = () => {
           onOpenChange={setEditDialogOpen}
         />
 
-        {/* Modal de Gerenciar Itens */}
-        <ManagePlaylistItemsDialog
-          playlist={managingPlaylist}
-          open={manageDialogOpen}
-          onOpenChange={handleManageDialogClose}
-          onPlaylistUpdated={handlePlaylistUpdated}
-        />
+
 
       </div>
     </Layout>

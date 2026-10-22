@@ -13,7 +13,7 @@ export const useLicenseManagement = () => {
   const checkAndBlockExpiredLicenses = async () => {
     try {
       console.log('🔍 Verificando licenças expiradas para bloqueio automático...');
-      
+
       // Buscar licenças ativas que estão expiradas há mais de 3 dias
       const { data: expiredLicenses, error: expiredError } = await supabase
         .from('licenses')
@@ -39,10 +39,10 @@ export const useLicenseManagement = () => {
       // Bloquear licenças expiradas
       for (const license of expiredToBlock) {
         console.log(`🔒 Bloqueando automaticamente licença expirada: ${license.user_id}`);
-        
+
         await supabase
           .from('licenses')
-          .update({ 
+          .update({
             status: 'suspended',
             updated_at: new Date().toISOString()
           })
@@ -56,7 +56,7 @@ export const useLicenseManagement = () => {
 
         if (playerData && playerData.length > 0) {
           console.log(`📡 Enviando comandos de bloqueio automático para ${playerData.length} players`);
-          
+
           // Enviar comando para cada player usando Edge Function
           for (const player of playerData) {
             try {
@@ -64,7 +64,7 @@ export const useLicenseManagement = () => {
                 body: {
                   player_id: player.id,
                   command: 'block',
-                  payload: { 
+                  payload: {
                     reason: 'license_expired',
                     player_name: player.name
                   }
@@ -90,10 +90,10 @@ export const useLicenseManagement = () => {
   const fetchAllUsers = async () => {
     try {
       setLoading(true);
-      
+
       // Primeiro verificar e bloquear licenças expiradas
-      await checkAndBlockExpiredLicenses();
-      
+      // A validade é verificada no servidor a cada contato do dispositivo.
+
       // Buscar todos os usuários com seus perfis
       const { data: usersData, error: usersError } = await supabase
         .from('user_profiles')
@@ -159,14 +159,14 @@ export const useLicenseManagement = () => {
         // Atualizar licença existente
         const { data, error } = await supabase
           .from('licenses')
-          .update({ 
+          .update({
             end_date: newEndDate.toISOString(),
             updated_at: new Date().toISOString()
           })
           .eq('id', existingLicense.id)
           .select()
           .single();
-        
+
         if (error) throw error;
         result = data;
       } else {
@@ -182,7 +182,7 @@ export const useLicenseManagement = () => {
           }])
           .select()
           .single();
-        
+
         if (error) throw error;
         result = data;
       }
@@ -194,8 +194,8 @@ export const useLicenseManagement = () => {
           license_id: result.id,
           action_type: 'date_update',
           performed_by: user?.id,
-          details: { 
-            reason: `Data de término alterada para ${newEndDate.toLocaleDateString('pt-BR')}` 
+          details: {
+            reason: `Data de término alterada para ${newEndDate.toLocaleDateString('pt-BR')}`
           }
         }]);
 
@@ -221,7 +221,7 @@ export const useLicenseManagement = () => {
     try {
       console.log(`🔄 Iniciando ${block ? 'bloqueio' : 'desbloqueio'} da licença para usuário:`, userId);
       const newStatus = block ? 'suspended' : 'active'; // Usar apenas valores válidos do enum
-      
+
       // Verificar se existe licença
       const { data: existingLicense, error: fetchError } = await supabase
         .from('licenses')
@@ -241,14 +241,14 @@ export const useLicenseManagement = () => {
         console.log(`📝 Atualizando licença existente para status: ${newStatus}`);
         const { data, error } = await supabase
           .from('licenses')
-          .update({ 
+          .update({
             status: newStatus,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingLicense.id)
           .select()
           .single();
-        
+
         if (error) {
           console.error('❌ Erro ao atualizar licença:', error);
           throw error;
@@ -268,7 +268,7 @@ export const useLicenseManagement = () => {
           }])
           .select()
           .single();
-        
+
         if (error) throw error;
         licenseId = data.id;
       }
@@ -280,8 +280,8 @@ export const useLicenseManagement = () => {
           license_id: licenseId,
           action_type: block ? 'block' : 'unblock',
           performed_by: user?.id,
-          details: { 
-            reason: `Licença ${block ? 'bloqueada' : 'desbloqueada'} pelo administrador` 
+          details: {
+            reason: `Licença ${block ? 'bloqueada' : 'desbloqueada'} pelo administrador`
           }
         }]);
 
@@ -293,7 +293,7 @@ export const useLicenseManagement = () => {
 
       if (playerData && playerData.length > 0) {
         console.log(`📡 Enviando comandos para ${playerData.length} players`);
-        
+
         // Enviar comando para cada player usando Edge Function
         for (const player of playerData) {
           try {
@@ -301,7 +301,7 @@ export const useLicenseManagement = () => {
               body: {
                 player_id: player.id,
                 command: block ? 'block' : 'unblock',
-                payload: { 
+                payload: {
                   reason: block ? 'license_blocked' : 'license_unblocked',
                   player_name: player.name
                 }
@@ -355,14 +355,14 @@ export const useLicenseManagement = () => {
         // Atualizar licença existente
         const { data, error } = await supabase
           .from('licenses')
-          .update({ 
+          .update({
             max_players: newMaxPlayers,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingLicense.id)
           .select()
           .single();
-        
+
         if (error) throw error;
         result = data;
       } else {
@@ -378,7 +378,7 @@ export const useLicenseManagement = () => {
           }])
           .select()
           .single();
-        
+
         if (error) throw error;
         result = data;
       }
@@ -390,8 +390,8 @@ export const useLicenseManagement = () => {
           license_id: result.id,
           action_type: 'max_players_update',
           performed_by: user?.id,
-          details: { 
-            reason: `Quantidade máxima de players alterada para ${newMaxPlayers}` 
+          details: {
+            reason: `Quantidade máxima de players alterada para ${newMaxPlayers}`
           }
         }]);
 

@@ -8,7 +8,7 @@ interface PlaylistStatsProps {
 }
 
 const PlaylistStats = ({ playlist }: PlaylistStatsProps) => {
-  const { stats, loading } = usePlaylistStats(playlist);
+  const { stats, loading, playersError } = usePlaylistStats(playlist);
 
   if (loading) {
     return (
@@ -23,8 +23,8 @@ const PlaylistStats = ({ playlist }: PlaylistStatsProps) => {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">Vídeos:</span>
-        <span className="font-medium">{stats.totalVideos}</span>
+        <span className="text-muted-foreground">Itens:</span>
+        <span className="font-medium">{stats.totalItems}</span>
       </div>
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">Duração:</span>
@@ -32,8 +32,8 @@ const PlaylistStats = ({ playlist }: PlaylistStatsProps) => {
       </div>
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">Players:</span>
-        <Badge variant="outline" className="text-xs">
-          {stats.assignedPlayers}
+        <Badge variant="outline" className="text-xs" aria-live="polite" title={playersError || 'Players vinculados a esta playlist, incluindo os offline'}>
+          {stats.assignedPlayers ?? '—'}
         </Badge>
       </div>
     </div>

@@ -1,0 +1,20 @@
+import {useState} from 'react';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Badge} from '@/components/ui/badge';
+import {useMediaTemplates} from '@/hooks/useMediaTemplates';
+import {useVideos} from '@/hooks/useVideos';
+import {useAuth} from '@/contexts/AuthContext';
+import type {PlaylistItem} from '@/hooks/usePlaylistItems';
+import {availableInstance} from '@/lib/available-media';
+import MediaTemplatePreview from './MediaTemplatePreview';
+export interface SelectedMedia{type:'video'|'media_instance';id:string;title:string;orientation:'horizontal'|'vertical';isOverlay?:boolean;file?:PlaylistItem['media_files'];instance?:PlaylistItem['media_instances'];}
+export function MediaSelector({onSelect,onClose,excludedIds=[],kind='all'}:{onSelect:(media:SelectedMedia)=>void;onClose:()=>void;excludedIds?:string[];kind?:'all'|'rss'|'files'}){
+ const {instances,loading:instanceLoading}=useMediaTemplates(),{videos,loading:filesLoading}=useVideos(),{user}=useAuth();const [query,setQuery]=useState(''),[orientation,setOrientation]=useState('all');
+ const fileIds=new Set(videos.filter(v=>['video','image'].includes(v.content_type)).map(v=>v.id));
+ const linkedFiles=new Set(instances.filter(i=>availableInstance(i,fileIds,user?.id)&&i.template?.media_type==='static').map(i=>i.custom_config.media_file_id||i.custom_config.video_file_id));
+ const choices:SelectedMedia[]=[...videos.filter(v=>v.file_url&&['video','image'].includes(v.content_type)&&!linkedFiles.has(v.id)).map(v=>({type:'video' as const,id:v.id,title:v.title,orientation:((v as any).orientation||'horizontal') as 'horizontal'|'vertical',file:v})),...instances.filter(i=>availableInstance(i,fileIds,user?.id)).map(i=>({type:'media_instance' as const,id:i.id,title:i.name,orientation:i.template!.orientation,isOverlay:i.template!.media_type==='overlay',instance:i}))].filter(m=>(kind==='all'||kind==='rss'&&m.instance?.template?.media_type==='rss'||kind==='files'&&m.instance?.template?.media_type!=='rss')&&!excludedIds.includes(m.id)&&m.title.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))&&(orientation==='all'||m.orientation===orientation));
+ return <div className="space-y-4"><div className="flex flex-wrap gap-3"><Input aria-label="Buscar mídias disponíveis" placeholder="Buscar mídias criadas…" className="min-w-0 flex-1" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="Orientação das mídias" className="rounded-md border bg-background px-3 text-sm" value={orientation} onChange={e=>setOrientation(e.target.value)}><option value="all">Todos os formatos</option><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select></div><p className="text-xs text-muted-foreground">Somente uploads e mídias criadas, ativas e disponíveis na sua conta. Modelos ainda não criados não aparecem aqui.</p>
+ {instanceLoading||filesLoading?<p>Carregando mídias…</p>:choices.length===0?<p className="rounded-md border p-5 text-sm text-muted-foreground">Nenhuma mídia disponível para adicionar. Envie arquivos em Conteúdos ou crie uma mídia em Criar Mídias.</p>:<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{choices.map(m=><button type="button" key={m.type+m.id} onClick={()=>onSelect(m)} className="overflow-hidden rounded-lg border text-left transition hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{m.file?.thumbnail_url||m.file?.content_type==='image'?<img src={m.file.thumbnail_url||m.file.file_url} alt="" loading="lazy" className="aspect-video w-full object-cover"/>:<MediaTemplatePreview type={m.instance?.template?.media_type||'static'} orientation={m.orientation} config={m.instance?.custom_config}/>}<div className="space-y-2 p-3"><p className="break-words text-sm font-semibold">{m.title}</p><Badge variant="secondary">{m.isOverlay?'Mensagem de rodapé':m.orientation==='vertical'?'Vertical':'Horizontal'}</Badge></div></button>)}</div>}
+ <div className="flex justify-end"><Button variant="outline" onClick={onClose}>Voltar à playlist</Button></div></div>;
+}

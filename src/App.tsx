@@ -2,20 +2,24 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { PlatformRoleProvider } from "@/contexts/PlatformRoleContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { RefreshProvider } from "@/contexts/RefreshContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MasterRoute from "@/components/MasterRoute";
 import { useLicenseChecker } from "@/hooks/useLicenseChecker";
 import { useTheme } from "@/hooks/useTheme";
+import Supervisao from "./pages/Supervisao";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Conteudos from "./pages/Conteudos";
 import Playlists from "./pages/Playlists";
+import PlaylistEditor from "./pages/PlaylistEditor";
 import Players from "./pages/Players";
 import Relatorios from "./pages/Relatorios";
+
 import Licencas from "./pages/Licencas";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
@@ -25,8 +29,8 @@ const queryClient = new QueryClient();
 
 const App = () => {
   // Inicializar verificação automática de licenças
-  useLicenseChecker();
-  
+  // Licenças são avaliadas no servidor, sem atualizações globais pelo navegador.
+
   // Inicializar sistema de temas
   useTheme();
 
@@ -37,6 +41,7 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <PlatformRoleProvider>
           <NotificationProvider>
             <RefreshProvider>
           <Routes>
@@ -56,6 +61,7 @@ const App = () => {
                 <Playlists />
               </ProtectedRoute>
             } />
+            <Route path="/playlists/:id" element={<ProtectedRoute><PlaylistEditor /></ProtectedRoute>} />
             <Route path="/players" element={
               <ProtectedRoute>
                 <Players />
@@ -66,6 +72,7 @@ const App = () => {
                 <Relatorios />
               </ProtectedRoute>
             } />
+            <Route path="/criar-midias" element={<Navigate to="/playlists" replace />} />
             <Route path="/licencas" element={
               <MasterRoute>
                 <Licencas />
@@ -81,11 +88,13 @@ const App = () => {
                 <PrimeirosPassos />
               </ProtectedRoute>
             } />
+            <Route path="/supervisao" element={<ProtectedRoute><Supervisao /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
             </RefreshProvider>
           </NotificationProvider>
+          </PlatformRoleProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

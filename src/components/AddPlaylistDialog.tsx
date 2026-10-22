@@ -1,3 +1,5 @@
+import PlaylistPlatformField from '@/components/PlaylistPlatformField';
+import { PlaylistPlatform, platformValue } from '@/lib/playlist-platform';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,12 +22,14 @@ import { useRefresh } from '@/contexts/RefreshContext';
 
 interface AddPlaylistDialogProps {
   trigger?: React.ReactNode;
+  onCreated?: () => void;
 }
 
-const AddPlaylistDialog = ({ trigger }: AddPlaylistDialogProps) => {
+const AddPlaylistDialog = ({ trigger, onCreated }: AddPlaylistDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    target_platform: 'all' as PlaylistPlatform,
     name: '',
     description: '',
     status: 'draft',
@@ -42,28 +46,32 @@ const AddPlaylistDialog = ({ trigger }: AddPlaylistDialogProps) => {
     setLoading(true);
     try {
       await addPlaylist({
+        target_platform: formData.target_platform,
         name: formData.name,
+        description: formData.description,
         is_active: formData.status === 'active',
       });
-      
+
       // Adicionar notificação
       addNotification({
         type: 'playlist_created',
         title: 'Playlist Criada',
         message: `A playlist "${formData.name}" foi criada com sucesso.`
       });
-      
+
       console.log('✅ AddPlaylistDialog: Playlist criada com sucesso!');
-      
+
       // Forçar refresh global
       triggerRefresh();
-      
+
       setFormData({
+        target_platform:'all',
         name: '',
         description: '',
         status: 'draft',
       });
       setOpen(false);
+      onCreated?.();
     } catch (error) {
       console.error('Error adding playlist:', error);
     } finally {
@@ -122,11 +130,12 @@ const AddPlaylistDialog = ({ trigger }: AddPlaylistDialogProps) => {
                 <SelectContent>
                   <SelectItem value="draft">Rascunho</SelectItem>
                   <SelectItem value="active">Ativa</SelectItem>
-                  <SelectItem value="scheduled">Agendada</SelectItem>
+
                 </SelectContent>
               </Select>
             </div>
           </div>
+          <PlaylistPlatformField value={formData.target_platform} onChange={value=>setFormData(prev=>({...prev,target_platform:value}))}/>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar

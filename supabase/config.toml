@@ -1,1 +1,7 @@
 project_id = "fzgkqdhlxolcxqctillo"
+
+[functions.manage-devices]
+verify_jwt = false # JWT validado com auth.getUser dentro da função.
+
+[functions.device-api]
+verify_jwt = false # Credenciais de dispositivo próprias, verificadas no servidor.

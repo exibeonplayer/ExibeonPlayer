@@ -38,3 +38,9 @@ dist-ssr
 # Text notes
 *.txt
 *.png
+
+# Hosting metadata and backend migrations
+.vercel/
+.env.*
+!.env.example
+!supabase/migrations/*.sql

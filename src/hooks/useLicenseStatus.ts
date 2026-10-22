@@ -46,13 +46,13 @@ export const useLicenseStatus = () => {
     // Verificar se está expirado (3 dias após vencimento)
     if (userLicense.end_date) {
       const endDate = new Date(userLicense.end_date);
-      const gracePeriod = new Date(endDate.getTime() + (3 * 24 * 60 * 60 * 1000)); // 3 dias
-      
+      const gracePeriod = endDate; // A autorização termina no vencimento da licença.
+
       if (now > gracePeriod) {
         isExpired = true;
         isActive = false;
         daysSinceExpiry = Math.floor((now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
-        
+
         // Se foi bloqueada automaticamente por expiração, mostrar como expirada
         if (userLicense.status === 'suspended') {
           status = 'expired';
@@ -65,7 +65,7 @@ export const useLicenseStatus = () => {
     }
 
     // Se status é explicitamente 'suspended' (bloqueio manual), considerar como bloqueado
-    if (userLicense.status === 'suspended' && !isExpired) {
+    if (['suspended','blocked'].includes(userLicense.status) && !isExpired) {
       status = 'blocked';
       isBlocked = true;
       isActive = false;

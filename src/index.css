@@ -222,3 +222,16 @@ All colors MUST be HSL.
     overflow-x: hidden;
   }
 }
+
+/* Layout da gestão: conteúdo legível em painéis estreitos e telas menores. */
+.management-main :where(h1,h2,h3,p,dd){overflow-wrap:anywhere}
+.management-main :where(.grid > *, .flex > *){min-width:0}
+.management-main :where(input,select){min-width:0;max-width:100%}
+.management-main h1{font-size:clamp(1.5rem,2.2vw,1.875rem);letter-spacing:-.035em;line-height:1.25}
+.management-main :where(select){min-height:2.5rem}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+.management-nav{scrollbar-width:thin;scrollbar-color:hsl(var(--border)) transparent}
+.management-nav::-webkit-scrollbar{height:4px}
+.management-nav::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:4px}
+.management-nav::-webkit-scrollbar-track{background:transparent}

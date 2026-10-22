@@ -1,3 +1,5 @@
+import PlaylistPlatformField from '@/components/PlaylistPlatformField';
+import { PlaylistPlatform, platformValue } from '@/lib/playlist-platform';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +24,7 @@ interface EditPlaylistDialogProps {
 const EditPlaylistDialog = ({ playlist, open, onOpenChange }: EditPlaylistDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    target_platform: 'all' as PlaylistPlatform,
     name: '',
     is_active: true,
   });
@@ -32,6 +35,7 @@ const EditPlaylistDialog = ({ playlist, open, onOpenChange }: EditPlaylistDialog
   useEffect(() => {
     if (playlist) {
       setFormData({
+        target_platform: platformValue(playlist.target_platform),
         name: playlist.name,
         is_active: playlist.is_active ?? true,
       });
@@ -45,13 +49,14 @@ const EditPlaylistDialog = ({ playlist, open, onOpenChange }: EditPlaylistDialog
     setLoading(true);
     try {
       await updatePlaylist(playlist.id, {
+        target_platform: formData.target_platform,
         name: formData.name,
         is_active: formData.is_active,
       });
-      
+
       // Recarregar lista de playlists
       await refreshPlaylists();
-      
+
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating playlist:', error);
@@ -85,9 +90,9 @@ const EditPlaylistDialog = ({ playlist, open, onOpenChange }: EditPlaylistDialog
               <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.is_active ? 'active' : 'draft'}
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  is_active: value === 'active' 
+                onValueChange={(value) => setFormData(prev => ({
+                  ...prev,
+                  is_active: value === 'active'
                 }))}
               >
                 <SelectTrigger>
@@ -100,6 +105,7 @@ const EditPlaylistDialog = ({ playlist, open, onOpenChange }: EditPlaylistDialog
               </Select>
             </div>
           </div>
+          <PlaylistPlatformField value={formData.target_platform} onChange={value=>setFormData(prev=>({...prev,target_platform:value}))}/>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar

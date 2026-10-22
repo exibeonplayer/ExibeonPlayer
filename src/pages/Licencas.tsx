@@ -1,3 +1,5 @@
+import DeleteUserDialog from '@/components/DeleteUserDialog';
+import CreateUserDialog from '@/components/CreateUserDialog';
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -24,12 +26,14 @@ import { Label } from '@/components/ui/label';
 import { useLicenseManagement } from '@/hooks/useLicenseManagement';
 import { useSystemNotifications } from '@/hooks/useSystemNotifications';
 import SendNotificationDialog from '@/components/SendNotificationDialog';
-import { Search, Lock, Unlock, Calendar as CalendarIcon, Users, Bell } from 'lucide-react';
+import { Search, Lock, Unlock, Calendar as CalendarIcon, Users, Bell, UserPlus, Trash2 } from 'lucide-react';
 
 
 const Licencas = () => {
-  const { users, loading, updateLicenseEndDate, blockUnblockLicense, updateMaxPlayers } = useLicenseManagement();
+  const { users, loading, updateLicenseEndDate, blockUnblockLicense, updateMaxPlayers, refetch } = useLicenseManagement();
   const { sendNotification, users: notificationUsers, sending, isMaster } = useSystemNotifications();
+  const [deleteUser, setDeleteUser] = useState<{id:string;email:string}|null>(null);
+  const [createUserOpen, setCreateUserOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showNotificationDialog, setShowNotificationDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -81,9 +85,9 @@ const Licencas = () => {
       blocked: { color: 'bg-destructive', text: 'Bloqueada' },
       expired: { color: 'bg-warning', text: 'Expirada' },
     };
-    
+
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.active;
-    
+
     return (
       <Badge className={`${config.color} text-white`}>
         {config.text}
@@ -96,13 +100,13 @@ const Licencas = () => {
       console.log(`📋 Usuário ${user.email} sem licença - retornando 'expired'`);
       return 'expired';
     }
-    
+
     // Verificar se está expirado (3 dias após vencimento)
     if (user.license.end_date) {
       const now = new Date();
       const endDate = new Date(user.license.end_date);
-      const gracePeriod = new Date(endDate.getTime() + (3 * 24 * 60 * 60 * 1000)); // 3 dias após vencimento
-      
+      const gracePeriod = endDate; // Sem tolerância após o vencimento.
+
       console.log(`📅 Usuário ${user.email}:`, {
         endDate: endDate.toLocaleDateString('pt-BR'),
         gracePeriod: gracePeriod.toLocaleDateString('pt-BR'),
@@ -110,7 +114,7 @@ const Licencas = () => {
         status: user.license.status,
         isExpired: now > gracePeriod
       });
-      
+
       // Se passou do período de graça, é expirada
       if (now > gracePeriod) {
         console.log(`⚠️ Usuário ${user.email} está expirado (passou do período de graça)`);
@@ -124,13 +128,13 @@ const Licencas = () => {
         return 'expired';
       }
     }
-    
+
     // Se status é explicitamente 'suspended' (bloqueio manual), considerar como bloqueado
     if (user.license.status === 'suspended') {
       console.log(`🔒 Usuário ${user.email} bloqueado manualmente - retornando 'blocked'`);
       return 'blocked';
     }
-    
+
     console.log(`✅ Usuário ${user.email} ativo - retornando 'active'`);
     return 'active';
   };
@@ -170,6 +174,7 @@ const Licencas = () => {
               Gerencie licenças de usuários (Acesso exclusivo para Master)
             </p>
           </div>
+          {isMaster && <Button onClick={() => setCreateUserOpen(true)}><UserPlus className="w-4 h-4 mr-2" />Criar novo usuário</Button>}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
@@ -273,8 +278,8 @@ const Licencas = () => {
                     <div className="flex items-center gap-2">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               setSelectedUser(user);
@@ -311,8 +316,8 @@ const Licencas = () => {
 
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               setSelectedUserForPlayers(user);
@@ -352,9 +357,10 @@ const Licencas = () => {
                         </DialogContent>
                       </Dialog>
 
+                      {isMaster && !user.is_master && <Button variant="destructive" size="sm" onClick={() => setDeleteUser({id:user.id,email:user.email})}><Trash2 className="w-4 h-4 mr-1" />Excluir usuário</Button>}
                       {getLicenseStatus(user) === 'blocked' ? (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleBlockLicense(user.id, false)}
                         >
@@ -362,8 +368,8 @@ const Licencas = () => {
                           Desbloquear
                         </Button>
                       ) : (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleBlockLicense(user.id, true)}
                         >
@@ -380,6 +386,9 @@ const Licencas = () => {
         </div>
         </div>
       </div>
+
+      {isMaster && <DeleteUserDialog user={deleteUser} onClose={() => setDeleteUser(null)} onDeleted={refetch} />}
+      {isMaster && <CreateUserDialog open={createUserOpen} onOpenChange={setCreateUserOpen} onCreated={async (email) => { setSearchTerm(email); await refetch(); }} />}
 
       {/* Dialog para envio de notificações */}
       <SendNotificationDialog

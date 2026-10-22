@@ -1,3 +1,4 @@
+import { resolvePrivateMedia } from '@/lib/private-media';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,9 +42,9 @@ export const useVideos = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       console.log(`✅ useVideos: Dados recebidos:`, data?.length || 0, 'arquivos');
-      setVideos((data as any) || []);
+      setVideos(await resolvePrivateMedia((data as any) || []));
     } catch (error) {
       console.error('Error fetching videos:', error);
       toast({
@@ -81,10 +82,11 @@ export const useVideos = () => {
         .single();
 
       if (error) throw error;
-      
-      console.log(`📁 Vídeo adicionado para usuário ${user.email}:`, data?.title);
+
+      console.log(`📁 Vídeo adicionado para usuário ${user.email}:`, (data as any)?.title);
       console.log('🔄 useVideos: Atualizando lista de vídeos automaticamente');
-      setVideos(prev => [data as any, ...prev]);
+      const [display] = await resolvePrivateMedia([data as any]);
+      setVideos(prev => [display, ...prev]);
       toast({
         title: "Sucesso",
         description: "Vídeo adicionado com sucesso",
@@ -116,12 +118,13 @@ export const useVideos = () => {
         .single();
 
       if (error) throw error;
-      
-      console.log(`📁 Vídeo atualizado para usuário ${user.email}:`, data?.title);
-      setVideos(prev => prev.map(video => 
-        video.id === id ? { ...video, ...(data as any) } : video
+
+      console.log(`📁 Vídeo atualizado para usuário ${user.email}:`, (data as any)?.title);
+      const [display] = await resolvePrivateMedia([data as any]);
+      setVideos(prev => prev.map(video =>
+        video.id === id ? { ...video, ...display } : video
       ));
-      
+
       toast({
         title: "Sucesso",
         description: "Vídeo atualizado com sucesso",
@@ -151,7 +154,7 @@ export const useVideos = () => {
         .eq('user_id', user.id); // ✅ Garantir que só delete vídeos do usuário atual
 
       if (error) throw error;
-      
+
       console.log(`📁 Vídeo removido para usuário ${user.email}:`, id);
       setVideos(prev => prev.filter(video => video.id !== id));
       toast({
@@ -173,6 +176,8 @@ export const useVideos = () => {
     if (user) {
       console.log('🔄 useVideos: Recarregando vídeos para usuário:', user.email);
       fetchVideos();
+      const timer=setInterval(fetchVideos,30*60*1000);
+      return ()=>clearInterval(timer);
     }
   }, [user]); // ✅ Recarregar quando o usuário mudar
 

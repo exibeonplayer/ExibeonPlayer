@@ -10,10 +10,10 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   return (
     <LicenseStatusProvider>
-      <div className="min-h-screen bg-background">
+      <div className="flex min-h-screen min-h-[100dvh] min-w-0 flex-col bg-background">
         <Header />
-        <main className="pt-20 pb-24 px-6">
-          <div className="max-w-7xl mx-auto">
+        <main className="management-main min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          <div className="mx-auto w-full min-w-0 max-w-7xl">
             {children}
           </div>
         </main>

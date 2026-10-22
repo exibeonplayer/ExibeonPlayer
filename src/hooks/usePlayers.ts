@@ -41,6 +41,7 @@ export const usePlayers = () => {
         .from('players')
         .select('*')
         .eq('user_id', user.id)
+        .is('revoked_at', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -76,8 +77,8 @@ export const usePlayers = () => {
         .single();
 
       if (error) throw error;
-      
-      console.log(`🎮 Player adicionado para usuário ${user.email}:`, data?.name);
+
+      console.log(`🎮 Player adicionado para usuário ${user.email}:`, (data as unknown as Player)?.name);
       setPlayers(prev => [data as any, ...prev]);
       toast({
         title: "Sucesso",
@@ -110,12 +111,12 @@ export const usePlayers = () => {
         .single();
 
       if (error) throw error;
-      
-      console.log(`🎮 Player atualizado para usuário ${user.email}:`, data?.name);
-      setPlayers(prev => prev.map(player => 
+
+      console.log(`🎮 Player atualizado para usuário ${user.email}:`, (data as unknown as Player)?.name);
+      setPlayers(prev => prev.map(player =>
         player.id === id ? { ...player, ...(data as any) } : player
       ));
-      
+
       toast({
         title: "Sucesso",
         description: "Player atualizado com sucesso",
@@ -145,7 +146,7 @@ export const usePlayers = () => {
         .eq('user_id', user.id); // ✅ Garantir que só delete players do usuário atual
 
       if (error) throw error;
-      
+
       console.log(`🎮 Player removido para usuário ${user.email}:`, id);
       setPlayers(prev => prev.filter(player => player.id !== id));
       toast({
